@@ -2,45 +2,52 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-# Configuración básica (DEBE ser la primera línea de Streamlit)
+# Configuración de página
 st.set_page_config(page_title="F1 Pit Optimizer", page_icon="🏎️", layout="wide")
 
-# Ocultar menú de Streamlit y pie de página para que parezca una app real
-hide_style = """
-    <style>
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    </style>
-"""
-st.markdown(hide_style, unsafe_allow_html=True)
+#Cargar CSS externo
+with open("assets/style.css") as f:
+    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-# Encabezado
-st.title("🏎️ F1 Pit Stop optimizer")
-st.markdown("---")
+#Header
+st.markdown("""
+<div style="display:flex; align-items:baseline; gap:1rem; margin-bottom:0.25rem">
+  <span style="font-family:'Rajdhani',sans-serif; font-weight:700; font-size:2.2rem; letter-spacing:0.08em; text-transform:uppercase; color:#fff">
+    🏎 F1 PIT OPTIMIZER
+  </span>
+  <span style="font-family:'Share Tech Mono',monospace; font-size:0.72rem; color:#E53935; letter-spacing:0.2em; padding-bottom:0.2rem">
+    v2.4.1 · RACE MODE
+  </span>
+</div>
+<div style="font-family:'Share Tech Mono',monospace; font-size:0.72rem; color:#8B949E; letter-spacing:0.12em; margin-bottom:0.75rem">
+  STRATEGY SIMULATION SYSTEM · NUMERICAL METHODS ENGINE
+</div>
+<hr>
+""", unsafe_allow_html=True)
 
-# Panel lateral
+#Sidebar 
 with st.sidebar:
-    st.header("⚙️ Parámetros de Simulación")
-    gran_premio = st.selectbox("Gran Premxio", ["Bahrein", "Monza", "Silverstone"])
+    st.header("Parámetros")
+    gran_premio = st.selectbox("Gran Premio", ["Bahrein", "Monza", "Silverstone"])
     compuesto = st.selectbox("Compuesto Inicial", ["Blando", "Medio", "Duro"])
-    temp_pista = st.slider("Temp. de Pista Inicial (°C)", 20, 60, 42)
-    st.button("Ejecutar Simulación", type="primary", use_container_width=True)
+    temp_pista = st.slider("Temp. de Pista (°C)", 20, 60, 42)
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.button("▶  Ejecutar Simulación", type="primary", use_container_width=True)
 
-# Dashboard de Métricas Principales (El "chiche" visual)
+#Métricas
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.metric(label="Temperatura Actual", value=f"{temp_pista} °C", delta="2 °C")
+    st.metric(label="Temperatura de Pista", value=f"{temp_pista} °C", delta="↑ 2 °C")
 with col2:
     st.metric(label="Lap Time Delta", value="1:34.520", delta="-0.150s", delta_color="inverse")
 with col3:
-    st.metric(label="Desgaste (RK4)", value="12%", delta="Crítico a >75%", delta_color="off")
+    st.metric(label="Desgaste · RK4", value="12 %", delta="Crítico > 75%", delta_color="off")
 with col4:
-    st.metric(label="Crossover Point", value="Vuelta 18", delta="Óptimo Newton-Raphson")
+    st.metric(label="Crossover Point", value="Vuelta 18", delta="Newton-Raphson", delta_color="off")
 
 st.markdown("---")
 
-# Espacio reservado para los gráficos interactivos
-st.subheader("📈 Curvas de Degradación (Próximamente con Plotly)")
-st.info("Acá se renderizarán los gráficos interactivos comparando las estrategias de 1 vs 2 paradas.")
+#Placeholder gráficos
+st.subheader("Curvas de Degradación")
+st.info("Los gráficos interactivos (Plotly) aparecerán acá · comparativa 1 vs 2 paradas.")

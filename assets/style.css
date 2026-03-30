@@ -1,0 +1,206 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Inter:wght@300;400;500&display=swap');
+
+/* ── Reset & Base ── */
+#MainMenu,
+footer,
+header {
+    visibility: hidden;
+}
+
+html,
+body,
+[data-testid="stAppViewContainer"] {
+    background-color: #080B0F !important;
+    color: #E8EDF2 !important;
+}
+
+[data-testid="stAppViewContainer"] {
+    background:
+        radial-gradient(ellipse 80% 40% at 50% -10%, rgba(229, 57, 53, 0.12) 0%, transparent 60%),
+        #080B0F !important;
+}
+
+/* ── Sidebar ── */
+[data-testid="stSidebar"] {
+    background: #0D1117 !important;
+    border-right: 1px solid rgba(229, 57, 53, 0.25) !important;
+}
+
+[data-testid="stSidebar"] * {
+    color: #C9D1D9 !important;
+}
+
+[data-testid="stSidebar"] .stSelectbox label,
+[data-testid="stSidebar"] .stSlider label {
+    font-family: 'Share Tech Mono', monospace !important;
+    font-size: 0.72rem !important;
+    letter-spacing: 0.12em !important;
+    text-transform: uppercase !important;
+    color: #8B949E !important;
+}
+
+/* Sidebar header */
+[data-testid="stSidebar"] h2 {
+    font-family: 'Rajdhani', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 1.2rem !important;
+    letter-spacing: 0.15em !important;
+    text-transform: uppercase !important;
+    color: #E5393580 !important;
+    border-bottom: 1px solid rgba(229, 57, 53, 0.2) !important;
+    padding-bottom: 0.5rem !important;
+    margin-bottom: 1.5rem !important;
+}
+
+/* Selectboxes */
+[data-testid="stSidebar"] [data-baseweb="select"]>div {
+    background: #161B22 !important;
+    border: 1px solid rgba(229, 57, 53, 0.3) !important;
+    border-radius: 4px !important;
+    font-family: 'Share Tech Mono', monospace !important;
+    font-size: 0.85rem !important;
+}
+
+/* Slider */
+[data-testid="stSidebar"] [data-testid="stSlider"] [role="slider"] {
+    background: #E53935 !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stSlider"] [data-testid="stSliderTrackFill"] {
+    background: #E53935 !important;
+}
+
+/* Primary button */
+[data-testid="stSidebar"] .stButton>button[kind="primary"] {
+    background: #E53935 !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 3px !important;
+    font-family: 'Rajdhani', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    letter-spacing: 0.2em !important;
+    text-transform: uppercase !important;
+    padding: 0.6rem 1rem !important;
+    transition: all 0.2s !important;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px)) !important;
+}
+
+[data-testid="stSidebar"] .stButton>button[kind="primary"]:hover {
+    background: #FF5252 !important;
+    box-shadow: 0 0 20px rgba(229, 57, 53, 0.4) !important;
+}
+
+/* ── Main Area Typography ── */
+h1,
+h2,
+h3 {
+    font-family: 'Rajdhani', sans-serif !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+}
+
+/* ── Page Title ── */
+[data-testid="stMarkdownContainer"] h1 {
+    font-size: 2.2rem !important;
+    color: #FFFFFF !important;
+    margin-bottom: 0 !important;
+}
+
+/* ── Divider ── */
+hr {
+    border: none !important;
+    border-top: 1px solid rgba(229, 57, 53, 0.25) !important;
+    margin: 1rem 0 !important;
+}
+
+/* ── Metric Cards ── */
+[data-testid="metric-container"] {
+    background: #0D1117 !important;
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    border-top: 2px solid #E53935 !important;
+    border-radius: 6px !important;
+    padding: 1.2rem 1.4rem !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+[data-testid="metric-container"]::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 40px;
+    height: 40px;
+    background: rgba(229, 57, 53, 0.08);
+    clip-path: polygon(100% 0, 0 0, 100% 100%);
+}
+
+[data-testid="metric-container"] label {
+    font-family: 'Share Tech Mono', monospace !important;
+    font-size: 0.68rem !important;
+    letter-spacing: 0.15em !important;
+    text-transform: uppercase !important;
+    color: #8B949E !important;
+}
+
+[data-testid="metric-container"] [data-testid="stMetricValue"] {
+    font-family: 'Rajdhani', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 1.9rem !important;
+    color: #F0F6FC !important;
+    line-height: 1.1 !important;
+}
+
+[data-testid="metric-container"] [data-testid="stMetricDelta"] {
+    font-family: 'Share Tech Mono', monospace !important;
+    font-size: 0.75rem !important;
+}
+
+/* ── Subheader ── */
+[data-testid="stMarkdownContainer"] h3 {
+    font-size: 1rem !important;
+    color: #8B949E !important;
+    border-left: 3px solid #E53935 !important;
+    padding-left: 0.75rem !important;
+    margin-top: 1.5rem !important;
+}
+
+/* ── Info box ── */
+[data-testid="stInfo"] {
+    background: #0D1117 !important;
+    border: 1px solid rgba(229, 57, 53, 0.2) !important;
+    border-left: 3px solid #E53935 !important;
+    border-radius: 4px !important;
+    color: #8B949E !important;
+    font-family: 'Share Tech Mono', monospace !important;
+    font-size: 0.82rem !important;
+}
+
+[data-testid="stInfo"] svg {
+    color: #E53935 !important;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #080B0F;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #E5393540;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #E53935;
+}
+
+/* ── Columns spacing ── */
+[data-testid="column"] {
+    padding: 0 0.4rem !important;
+}
