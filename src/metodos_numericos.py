@@ -1,4 +1,3 @@
-from altair import NumericArrayMarkPropDef
 import numpy as np 
 
 # Integracion numerica
