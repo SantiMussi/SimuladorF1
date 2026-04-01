@@ -33,7 +33,7 @@ def obtener_telemetria_limpia(year, gp, session, driver):
     laps = laps[laps['IsAccurate'] == True]
 
     #Transformamos el tiempo de vuelta a segundos (Sickit-Learn necesita floats)
-    laps['LapTime_sec'] = laps=['LapTime'].dt.total_seconds()
+    laps['LapTime_sec'] = laps['LapTime'].dt.total_seconds()
 
     #Nos queda solo con las columnas que le importan a nuestro modelo
     df_limpio = laps[['LapNumber', 'TyreLife', 'Compound', 'LapTime_sec']]
