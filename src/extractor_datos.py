@@ -10,7 +10,7 @@ def obtener_telemetria_limpia(year, gp, session, driver):
     if not os.path.exists('data'):
         os.makedirs('data')
     
-    #Configuramos la cache para q no tarde 10 a;os y cada vez q lo corremos
+    #Configuramos la cache para q no tarde 10 años y cada vez q lo corremos
     ff1.Cache.enable_cache('data')
 
     print(f"EXTRACTOR >> Descargando datos: {gp} {year} -- {session} ({driver})")
