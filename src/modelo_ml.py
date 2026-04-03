@@ -41,10 +41,12 @@ def entrenar_modelo_degradacion(df):
 
     return modelo, poly, columnas_x, error, precision
 
+
 #TEST
 if __name__ == "__main__":
     from extractor_datos import obtener_telemetria_limpia
-
+    
+    # Extraemos los datos (el extractor sigue calculando RK4 por su cuenta, pero la IA lo ignora)
     df = obtener_telemetria_limpia(2024, 'Bahrain', 'R', 'VER', T_pista=35.0)
 
     print('Entrenando modelo de MLL Polinomial..')
