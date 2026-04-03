@@ -24,8 +24,7 @@ def entrenar_modelo_degradacion(df):
     
     #Separar 80% para entrenar y 20% para evaluar
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    # --- NUEVO: Magia Polinomial (Grado 2 = Curva Parabólica) ---
+ 
     # Esto transforma "Vueltas" en "Vueltas al cuadrado" para capturar la degradación acelerada
     poly = PolynomialFeatures(degree=2)
     X_train_poly = poly.fit_transform(X_train)
@@ -46,7 +45,7 @@ def entrenar_modelo_degradacion(df):
 if __name__ == "__main__":
     from extractor_datos import obtener_telemetria_limpia
 
-    df = obtener_telemetria_limpia(2024, 'Bahrain', 'R', 'VER')
+    df = obtener_telemetria_limpia(2024, 'Bahrain', 'R', 'VER', T_pista=35.0)
 
     print('Entrenando modelo de MLL Polinomial..')
     modelo, poly, columnas_entrenamiento, error, precision = entrenar_modelo_degradacion(df)
