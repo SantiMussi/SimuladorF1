@@ -20,8 +20,8 @@ def entrenar_modelo_degradacion(df):
     X = df_ml[columnas_x]
 
     #Prediccion: tiempo de vuelta en segundos
-    y = df_ml['LapTime_sec']
-
+    y = df_ml['LapTime_sec_corrected']
+    
     #Separar 80% para entrenar y 20% para evaluar
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 

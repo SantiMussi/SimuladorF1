@@ -35,15 +35,11 @@ def obtener_telemetria_limpia(year, gp, session, driver):
     #Transformamos el tiempo de vuelta a segundos (Sickit-Learn necesita floats)
     laps['LapTime_sec'] = laps['LapTime'].dt.total_seconds()
 
+    #Correccion fisica (Combustible)
+    efecto_combustible_por_vuelta = 0.06
+    laps['LapTime_sec_corrected'] = laps['LapTime_sec'] + (laps['LapNumber'] * efecto_combustible_por_vuelta)
+
     #Nos queda solo con las columnas que le importan a nuestro modelo
-    df_limpio = laps[['LapNumber', 'TyreLife', 'Compound', 'LapTime_sec']]
-
+    df_limpio = laps[['LapNumber', 'TyreLife', 'Compound', 'LapTime_sec', 'LapTime_sec_corrected']]
+    
     return df_limpio
-
-
-#Test, dsp sacarlo
-if __name__ == "__main__":
-    #Probamos con TUTUTURU MAX VERSTAPPEEEN
-    df= obtener_telemetria_limpia(2024, 'Bahrain', 'R', 'VER')
-    print('Datos limpios y listos para sickit-learn')
-    print(df.head(10))
