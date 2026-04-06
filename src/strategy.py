@@ -29,6 +29,6 @@ class MotorEstrategia:
         
         return T
 
-    # TODO: Calculador crossoverPoint
+    # TODO: Calculador crossoverPoint (Newton-Raphson)
     #TODO: evaluar stint con simpson
     #TODO: Test breve
