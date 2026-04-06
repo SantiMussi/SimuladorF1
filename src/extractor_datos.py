@@ -32,7 +32,7 @@ def obtener_telemetria_limpia(year, gp, session, driver, T_pista):
     session_data.load(telemetry=False, weather=False)
 
     #Filtramos solo las vueltas del piloto elegido 
-    laps = session_data.laps.pick_drivers(driver)
+    laps = session_data.laps.pick_driver(driver)
 
     #Limpieza de datos
 
