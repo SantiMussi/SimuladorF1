@@ -47,7 +47,7 @@ if __name__ == "__main__":
     from extractor_datos import obtener_telemetria_limpia
     
     # Extraemos los datos
-    df = obtener_telemetria_limpia(2024, 'Suzuka', 'R', 'VER', T_pista=35.0)
+    df = obtener_telemetria_limpia(2024, 'Bahrein', 'R', 'VER', T_pista=35.0)
 
     print('Entrenando modelo de MLL Polinomial..')
     modelo, poly, columnas_entrenamiento, error, precision = entrenar_modelo_degradacion(df)
