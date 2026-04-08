@@ -11,8 +11,13 @@ class MotorEstrategia:
         self.poly = poly
         self.columnas_x = columnas_entrenamiento
 
-    def crear_funcion_desgaste(self, compuesto):
+        self.mapa_compuestos = {'Blando': 'SOFT', 'Medio': 'MEDIUM', 'Duro': 'HARD'}
+
+
+    def crear_funcion_desgaste(self, compuesto_es):
         """ Envuelve la prediccion de la IA en una funcion matematica continua (Tv)"""
+        compuesto_en = self.mapa_compuestos.get(compuesto_es, 'SOFT')
+        
         def T(v):
             #Evitamos que el modelo intente calcular tiempo de vueltas negativas
             v = max(1.0, float(v))
@@ -21,7 +26,7 @@ class MotorEstrategia:
 
             for col in self.columnas_x:
                 if col not in datos.columns:
-                    datos[col] = 1 if col == f'Compound_{compuesto}' else 0
+                    datos[col] = 1 if col == f'Compound_{compuesto_en}' else 0
 
             datos = datos[self.columnas_x]
             datos_poly = self.poly.transform(datos)
@@ -29,6 +34,29 @@ class MotorEstrategia:
         
         return T
 
-    # TODO: Calculador crossoverPoint (Newton-Raphson)
-    #TODO: evaluar stint con simpson
-    #TODO: Test breve
+        def analizar_stint(self, compuesto_es, vuelta_actual, temp_pista, umbral_perdida = 2.5):
+            """Calcula todo lo que necesita el app.py para llenar las metricas y graficos"""
+            T = self.crear_funcion_desgaste(compuesto_es)
+
+            # Tiempos deltas
+            tiempo_ideal = T(1) #Vuelta de qualy
+            tiempo_actual = T(vuelta_actual)
+            delta = tiempo_actual - tiempo_ideal #Cuanto tiempo perdemos por desgaste
+
+            # Crossover Point (Newton Raphson)
+            def P(v):
+                return T(v) - tiempo_ideal - umbral_perdida
+            
+            def dP(v):
+                h = 1e-4
+                return (P(v+h) - P(v- h)) / (2*h)
+
+            try:
+                crossover = max(1, int(round(newton_raphson(P, dP, x0=10.0))))
+            except Exception:
+                crossover = max(1, int(round(biseccion(P, 1, 60))))
+
+
+            #Termodinamica con RK4
+
+            #Generar datos para el grafico de Plotly
