@@ -2,8 +2,7 @@ import fastf1 as ff1
 import pandas as pd 
 import numpy as np 
 import os 
-from metodos_numericos import runge_kutta_4
-
+from src.metodos_numericos import runge_kutta_4
 
 #Envolvemos la EDO para poder inyectarle la variable T_Pista
 def crear_edo_temperatura(T_pista):
