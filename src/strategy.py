@@ -30,6 +30,7 @@ class MotorEstrategia:
 
             datos = datos[self.columnas_x]
             datos_poly = self.poly.transform(datos)
+            #La ia predice
             return self.modelo.predict(datos_poly)[0]
         
         return T
@@ -58,5 +59,6 @@ class MotorEstrategia:
 
 
             #Termodinamica con RK4
-
+            
             #Generar datos para el grafico de Plotly
+
