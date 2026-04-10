@@ -1,9 +1,10 @@
 import pandas as pd 
 import numpy as np
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures, StandardScaler
+from sklearn.linear_model import Ridge
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.pipeline import Pipeline
 
 def entrenar_modelo_degradacion(df):
     """
@@ -15,8 +16,8 @@ def entrenar_modelo_degradacion(df):
     #Convierte 'Compound' en columnas como "COMPOUND_SOFT" (1 o 0)
     df_ml = pd.get_dummies(df, columns=["Compound"], drop_first=False)
 
-    #Definir que miramos (X) y que queremos predecir (Y)
-    columnas_x = [col for col in df_ml.columns if col in ['TyreLife', 'Compound_SOFT', 'Compound_MEDIUM', 'Compound_HARD']]
+    # Definir que miramos (X) y que queremos predecir (Y)
+    columnas_x = [col for col in df_ml.columns if col in ['TyreLife', 'Temp_RK4', 'Compound_SOFT', 'Compound_MEDIUM', 'Compound_HARD']]
     X = df_ml[columnas_x]
 
     #Prediccion: tiempo de vuelta en segundos
@@ -25,40 +26,42 @@ def entrenar_modelo_degradacion(df):
     #Separar 80% para entrenar y 20% para evaluar
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
  
-    # Esto transforma "Vueltas" en "Vueltas al cuadrado" para capturar la degradación acelerada
-    poly = PolynomialFeatures(degree=2)
-    X_train_poly = poly.fit_transform(X_train)
-    X_test_poly = poly.transform(X_test)
+    # Usamos Ridge (L2 Regularización) para evitar inestabilidad por colinealidad
+    # (TyreLife y Temp_RK4 están altamente correlacionados en un solo stint)
+    modelo = Pipeline([
+        ('scaler', StandardScaler()),
+        ('poly', PolynomialFeatures(degree=2)),
+        ('regressor', Ridge(alpha=0.1))
+    ])
+    
+    modelo.fit(X_train, y_train)
 
-    #Crear y entrenar la ia (Regresión Lineal sobre las características polinomialicas)
-    modelo = LinearRegression()
-    modelo.fit(X_train_poly, y_train)
-
-    #Evaluar a la IA con el 20% restante
-    predicciones_test = modelo.predict(X_test_poly)
+    # Evaluar a la IA con el 20% restante
+    predicciones_test = modelo.predict(X_test)
     error = mean_absolute_error(y_test, predicciones_test)
     precision = r2_score(y_test, predicciones_test)
 
-    return modelo, poly, columnas_x, error, precision
+    return modelo, None, columnas_x, error, precision # poly ya está dentro del pipeline
 
 
 #TEST
 if __name__ == "__main__":
-    from extractor_datos import obtener_telemetria_limpia
+    from src.extractor_datos import obtener_telemetria_limpia
     
     # Extraemos los datos
     df = obtener_telemetria_limpia(2024, 'Bahrein', 'R', 'VER', T_pista=35.0)
 
     print('Entrenando modelo de MLL Polinomial..')
-    modelo, poly, columnas_entrenamiento, error, precision = entrenar_modelo_degradacion(df)
+    modelo, _, columnas_entrenamiento, error, precision = entrenar_modelo_degradacion(df)
     print('Modelo entrenado!')
     
     print('\nRESULTADOS DE LA EVALUACION:')
     print(f'Error Promedio (MAE): Le erra por {error:.3f} segundos')
     print(f'Precision (R2): {precision * 100:.1f}%\n')
 
-    #Le hacemos la pregunta imposible a la ia (Extrapolación)
-    datos_futuros = pd.DataFrame({'TyreLife': [25]})
+    # Le hacemos la pregunta imposible a la ia (Extrapolación)
+    # Simulamos un neumático de 25 vueltas que está a ~105 grados
+    datos_futuros = pd.DataFrame({'TyreLife': [25], 'Temp_RK4': [105.0]})
     
     for col in columnas_entrenamiento:
         if col not in datos_futuros.columns:
@@ -66,10 +69,7 @@ if __name__ == "__main__":
 
     datos_futuros = datos_futuros[columnas_entrenamiento]
 
-    #Tenemos que transformar los datos futuros al mismo formato polinomial antes de predecir
-    datos_futuros_poly = poly.transform(datos_futuros)
-
-    #La magic de la ia
-    prediccion = modelo.predict(datos_futuros_poly)
+    # La magic de la ia (Ya no necesitamos transformar manualmente, el pipeline lo hace)
+    prediccion = modelo.predict(datos_futuros)
     print('PREDICCION DE LA IA')
     print(f'Con un neumatico SOFT con 25 vueltas, el tiempo estimado es {prediccion[0]:.3f} segundos')
