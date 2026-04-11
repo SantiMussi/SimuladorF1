@@ -72,7 +72,11 @@ class MotorEstrategia:
 
         try:
             # Buscamos la raíz donde la pérdida de pace cruza el umbral
-            crossover = max(1, int(round(newton_raphson(P, dP, x0=10.0))))
+            # x0 dinámico según compuesto para mejorar la convergencia
+            x0_map = {'Blando': 15.0, 'Medio': 25.0, 'Duro': 35.0}
+            punto_inicio = x0_map.get(compuesto_es, 20.0)
+            
+            crossover = max(1, int(round(newton_raphson(P, dP, x0=punto_inicio))))
         except Exception:
             # Fallback robusto a Bisección. 
             # Verificamos si existe un cambio de signo en [1, 60]

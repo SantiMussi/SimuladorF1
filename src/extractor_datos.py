@@ -19,7 +19,9 @@ def crear_edo_temperatura(T_pista, compuesto='MEDIUM'):
     k = config['k']
     
     def edo(t, T):
-        return k * (T_pista - T) + friccion
+        # T_pista evoluciona con el tiempo (se enfría 0.05 grados por vuelta/unidad de tiempo)
+        T_pista_t = T_pista - (0.05 * t)
+        return k * (T_pista_t - T) + friccion
     return edo
 
 
@@ -58,19 +60,33 @@ def obtener_telemetria_limpia(year, gp, session, driver, T_pista):
         usa_datos_simulados = True
         
         # Generar data sintética realista para no frenar el proyecto (Facu)
-        n_vueltas = 45
-        vueltas = list(range(1, n_vueltas + 1))
-        tiempos_base = 92.5 + np.cumsum(np.random.normal(0.06, 0.02, n_vueltas)) # Degra 0.06s/lap
+        # 60 vueltas: 20 SOFT, 20 MEDIUM, 20 HARD
+        n_vueltas_per_compound = 20
+        compuestos = ['SOFT', 'MEDIUM', 'HARD']
         
-        laps = pd.DataFrame({
-            'LapNumber': vueltas,
-            'TyreLife': vueltas,
-            'Compound': 'SOFT',
-            'LapTime_sec': tiempos_base,
-            'PitInTime': [pd.NaT] * n_vueltas,
-            'PitOutTime': [pd.NaT] * n_vueltas,
-            'IsAccurate': [True] * n_vueltas
-        })
+        data_frames = []
+        bases = {'SOFT': 91.0, 'MEDIUM': 93.0, 'HARD': 95.0}
+        degras = {'SOFT': 0.08, 'MEDIUM': 0.05, 'HARD': 0.03}
+        
+        for comp in compuestos:
+            vueltas = list(range(1, n_vueltas_per_compound + 1))
+            # Degradación específica por compuesto
+            tiempos = bases[comp] + np.cumsum(np.random.normal(degras[comp], 0.02, n_vueltas_per_compound))
+            
+            df_comp = pd.DataFrame({
+                'LapNumber': vueltas, # Simplificado para demo
+                'TyreLife': vueltas,
+                'Compound': comp,
+                'LapTime_sec': tiempos,
+                'PitInTime': [pd.NaT] * n_vueltas_per_compound,
+                'PitOutTime': [pd.NaT] * n_vueltas_per_compound,
+                'IsAccurate': [True] * n_vueltas_per_compound
+            })
+            data_frames.append(df_comp)
+        
+        laps = pd.concat(data_frames, ignore_index=True)
+        # Ajustamos LapNumber para que sea continuo
+        laps['LapNumber'] = range(1, len(laps) + 1)
 
     # Transformamos el tiempo de vuelta a segundos (Si es real viene de .dt.total_seconds, si es sintético ya es float)
     if 'LapTime' in laps.columns:

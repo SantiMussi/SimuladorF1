@@ -35,40 +35,55 @@ st.markdown("""
 <hr>
 """, unsafe_allow_html=True)
 
-# ─── INICIALIZAR ESTADO (Para no mostrar errores antes de simular) ───
+# ─── INICIALIZAR ESTADO (Persistencia de IA y Datos) ───
 if 'simulacion_ejecutada' not in st.session_state:
     st.session_state.simulacion_ejecutada = False
     st.session_state.resultados = None
+    st.session_state.modelo = None
+    st.session_state.cols = None
+    st.session_state.df = None
+    st.session_state.precision_modelo = 0.0
+    st.session_state.is_demo = False
 
-#Sidebar 
+# Sidebar 
 with st.sidebar:
     st.header("⚙️ Parámetros")
-    # Usamos los nombres en inglés internamente para que FastF1 no se queje
     mapa_gp = {"Bahréin": "Bahrain", "Monza": "Monza", "Silverstone": "Silverstone"}
     gp_seleccionado = st.selectbox("Gran Premio", list(mapa_gp.keys()))
     compuesto = st.selectbox("Compuesto Inicial", ["Blando", "Medio", "Duro"])
     
     st.markdown("---")
     temp_pista = st.slider("Temp. de Pista (°C)", 20.0, 60.0, 35.0, step=1.0)
-    vuelta_actual = st.slider("Vuelta Actual (Stint)", 1, 40, 15) # Clave para ver la evolución!
+    vuelta_actual = st.slider("Vuelta Actual (Stint)", 1, 40, 15)
     
     st.markdown("<br>", unsafe_allow_html=True)
     btn_simular = st.button("▶  Ejecutar Simulación", type="primary", use_container_width=True)
 
-# ─── LÓGICA DE SIMULACIÓN ───
+# ─── LOGICA DE CONTROL DE ESTADO ───
+# Si el usuario hace clic en simular o no hay modelo cargado, entrenamos.
 if btn_simular:
     with st.spinner(f"📡 Descargando telemetría de {gp_seleccionado}..."):
         df = obtener_telemetria_limpia(2024, mapa_gp[gp_seleccionado], 'R', 'VER', temp_pista)
+        st.session_state.df = df
         
     with st.spinner("🧠 Entrenando Inteligencia Artificial..."):
         modelo, _, cols, error, precision = entrenar_modelo_degradacion(df)
-        motor = MotorEstrategia(modelo, cols)
-        
-    with st.spinner("🧮 Aplicando Simpson 1/3 y Newton-Raphson..."):
-        st.session_state.resultados = motor.analizar_stint(compuesto, vuelta_actual, temp_pista, umbral_perdida=1.5)
+        st.session_state.modelo = modelo
+        st.session_state.cols = cols
         st.session_state.precision_modelo = precision
-        st.session_state.is_demo = 'IsDemo' in df.columns # Guardamos si es modo demo
+        st.session_state.is_demo = 'IsDemo' in df.columns
         st.session_state.simulacion_ejecutada = True
+
+# Si ya tenemos un modelo (fue entrenado antes o recién), recalculamos el stint
+# Esto se dispara AUTOMÁTICAMENTE si el usuario mueve el slider, porque Streamlit recarga el script
+# pero como el modelo está en session_state, no volvemos a entrar al bloque 'if btn_simular'
+if st.session_state.simulacion_ejecutada:
+    # Usamos el modelo y columnas guardadas en el estado
+    motor = MotorEstrategia(st.session_state.modelo, st.session_state.cols)
+    
+    # Recalculamos SOLO la matemática del stint (Simpson, Newton-Raphson, etc.)
+    # Esto es ligero y permite interactividad fluida con el slider
+    st.session_state.resultados = motor.analizar_stint(compuesto, vuelta_actual, temp_pista, umbral_perdida=1.5)
 
 # ─── INTERFAZ DINÁMICA ───
 if st.session_state.simulacion_ejecutada:
