@@ -67,10 +67,12 @@ class PredictorDegradacion:
         peak_shape = 0.05 * (max(0, 4 - tyre_life)**2)
         
         # 5. Degradación cuadrática DINÁMICA (Escalada por m_life_efectiva)
+        # Paracaídas Anti-Overflow: Límite máximo de 20s de pérdida (Corrección Quirúrgica)
         deg_dinamica = 0
         if tyre_life > 5:
-            # El factor ahora usa m_life_efectiva de la pista
-            factor_base = 5.0 / ((m_life_efectiva - 5)**2)
-            deg_dinamica = (factor_base * mult) * (tyre_life - 5)**2
+            # d y k_efectivo calibrados para el modelo físico
+            d = phys.get('desgaste_base', 0.05) * mult
+            k_efectivo = 0.12 * track_abrasion
+            deg_dinamica = min(d * np.exp(k_efectivo * (tyre_life - 5)), 20.0)
             
         return pred_base + (self.offset_calibracion if apply_offset else 0) + warmup_penalty + peak_shape + deg_dinamica

@@ -88,4 +88,22 @@ def romberg_integration(f_poly, a, b, steps=5):
         for j in range(1, i + 1):
             R[i, j] = R[i, j-1] + (R[i, j-1] - R[i-1, j-1]) / (4**j - 1)
             
-    return R[steps-1, steps-1]
+def simpson_integral(f_poly, a, b, n=50):
+    """
+    Integración por Regla de Simpson (1/3) para mayor precisión en sectores.
+    """
+    if n % 2 == 1: n += 1 # n debe ser par
+    h = (b - a) / n
+    x = np.linspace(a, b, n + 1)
+    y = np.polyval(f_poly, x)
+    
+    S = y[0] + y[-1] + 4 * np.sum(y[1:-1:2]) + 2 * np.sum(y[2:-2:2])
+    return (h / 3) * S
+
+def montecarlo_simulation(f_poly, a, b, samples=1000):
+    """
+    Simulación de Montecarlo para validar variabilidad del ritmo en el sector.
+    """
+    x_rand = np.random.uniform(a, b, samples)
+    y_vals = np.polyval(f_poly, x_rand)
+    return np.mean(y_vals) * (b - a)

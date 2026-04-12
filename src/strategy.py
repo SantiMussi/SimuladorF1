@@ -63,37 +63,113 @@ class EngineEstrategia:
             
         return np.array(laps), np.array(tiempos), np.array(temps)
 
+    def optimizador_determinista(self, compounds, total_race_laps, track_temp):
+        """
+        Busca las vueltas de parada óptimas para una secuencia de compuestos dada (1 o 2 paradas).
+        Implementa el reseteo de 'edad de la goma' en cada stint.
+        """
+        n_paradas = len(compounds) - 1
+        mejor_tiempo = float('inf')
+        vueltas_optimas = []
+        
+        # Pre-calcular perfiles de lap time para cada compuesto posible
+        # (Esto optimiza el cálculo al no repetir RK45)
+        perfiles = {}
+        for c in set(compounds):
+            # Cambiamos temporalmente el compuesto del motor para simular
+            original_compound = self.compound
+            self.compound = c
+            _, tiempos, _ = self.simular_stint(total_race_laps, track_temp)
+            perfiles[c] = tiempos
+            self.compound = original_compound
+
+        if n_paradas == 1:
+            # Estrategia de 1 Parada: Stint A -> Stint B
+            for p1 in range(5, total_race_laps - 4):
+                t_stint1 = np.sum(perfiles[compounds[0]][:p1])
+                t_stint2 = np.sum(perfiles[compounds[1]][:total_race_laps - p1])
+                
+                tiempo_total = t_stint1 + self.pit_loss + t_stint2
+                
+                if tiempo_total < mejor_tiempo:
+                    mejor_tiempo = tiempo_total
+                    vueltas_optimas = [p1]
+        
+        elif n_paradas == 2:
+            # Estrategia de 2 Paradas: Stint A -> Stint B -> Stint C
+            # Usamos bucles anidados según el requerimiento
+            for p1 in range(1, total_race_laps - 2):
+                t_stint1 = np.sum(perfiles[compounds[0]][:p1])
+                for p2 in range(p1 + 1, total_race_laps - 1):
+                    t_stint2 = np.sum(perfiles[compounds[1]][:p2 - p1])
+                    t_stint3 = np.sum(perfiles[compounds[2]][:total_race_laps - p2])
+                    
+                    tiempo_total = t_stint1 + self.pit_loss + t_stint2 + self.pit_loss + t_stint3
+                    
+                    if tiempo_total < mejor_tiempo:
+                        mejor_tiempo = tiempo_total
+                        vueltas_optimas = [p1, p2]
+
+        # Construir el 'Race Trace' óptimo por segmentos
+        race_trace = []
+        compounds_trace = []
+        current_lap = 1
+        
+        periodos = vueltas_optimas + [total_race_laps]
+        for i, fin_lap in enumerate(periodos):
+            comp = compounds[i]
+            # Extraer el trozo de tiempo correspondiente (reseteando edad)
+            duracion = fin_lap - (periodos[i-1] if i > 0 else 0)
+            segmento = perfiles[comp][:duracion]
+            race_trace.extend(segmento.tolist())
+            compounds_trace.extend([comp] * duracion)
+            
+        return {
+            'vueltas_optimas': vueltas_optimas,
+            'tiempo_total': mejor_tiempo,
+            'race_trace': np.array(race_trace),
+            'compounds_trace': compounds_trace
+        }
+
     def calcular_estrategia_optima(self, laps_sim, tiempos_sim, total_race_laps):
         """
         Algoritmo Integral de Tiempo Neto:
         Compara el tiempo total de carrera terminando con el neumático actual
         vs el tiempo total parando en cada vuelta posible.
         """
-        # 1. Ajuste Polinomial para suavizar y poder integrar
+        # 1. Ajuste Polinomial para Stint 1 (Compuesto Actual)
         beta = least_squares_poly(laps_sim, tiempos_sim, degree=2)
         
+        # --- CORRECCIÓN REGLA FIA: Crossover Asimétrico ---
+        # Si elegimos SOFT o MEDIUM, el Stint 2 es HARD. Si elegimos HARD, es SOFT.
+        op_compound = 'HARD' if self.compound in ['SOFT', 'MEDIUM'] else 'SOFT'
+        laps_ref = np.arange(1, total_race_laps + 1)
+        tiempos_op = np.array([self.ml.predecir_lap(v, 100.0, op_compound, track_name=self.track_name) for v in laps_ref])
+        beta_op = least_squares_poly(laps_ref, tiempos_op, degree=2)
+
         def RaceTimeAt(v):
             return np.polyval(beta, v)
 
-        # 2. Calcular tiempo total SIN PARAR (Stint único hasta el final)
+        def RaceTimeAtOP(v):
+            return np.polyval(beta_op, v)
+
+        # 2. Calcular tiempo total SIN PARAR
         tiempo_sin_parar = np.sum([RaceTimeAt(v) for v in range(1, total_race_laps + 1)])
         
         mejor_tiempo_con_parada = float('inf')
         mejor_vuelta_parada = -1
         
-        # 3. Barrido de Crossover: Probar parar en cada vuelta x
-        # p_loss depende del circuito (Monza = 25s)
+        # 3. Barrido de Crossover
         track_data = CIRCUITOS_CONFIG.get(self.track_name, {})
         p_loss = track_data.get('pit_loss', 25.0)
         
-        # Probamos paradas lógicas (entre vuelta 5 y el final-5)
         for x in range(5, total_race_laps - 4):
-            # Tiempo del primer stint (hasta vuelta x)
+            # Tiempo del primer stint (Compuesto Original)
             t_stint1 = np.sum([RaceTimeAt(v) for v in range(1, x + 1)])
             
-            # Tiempo del segundo stint (desde el pit hasta el final)
+            # Tiempo del segundo stint (Compuesto OPUESTO)
             vueltas_restantes = total_race_laps - x
-            t_stint2 = np.sum([RaceTimeAt(v) for v in range(1, vueltas_restantes + 1)])
+            t_stint2 = np.sum([RaceTimeAtOP(v) for v in range(1, vueltas_restantes + 1)])
             
             tiempo_total = t_stint1 + p_loss + t_stint2
             
