@@ -14,7 +14,13 @@ CIRCUITOS_CONFIG = {
     'Silverstone': {'abrasion': 1.25, 'speed_factor': 1.4, 'base_lap_time': 90.0, 'event_name': 'Great Britain'},
     'Spa': {'abrasion': 1.25, 'speed_factor': 1.5, 'base_lap_time': 105.0, 'event_name': 'Belgium'},
     'Monza': {'abrasion': 0.8, 'speed_factor': 1.15, 'base_lap_time': 81.5, 'event_name': 'Italy', 'total_laps': 53, 'pit_loss': 25.0},
-    'Interlagos': {'abrasion': 1.1, 'speed_factor': 1.2, 'base_lap_time': 71.0, 'event_name': 'Brazil'}
+    'Interlagos': {'abrasion': 1.1, 'speed_factor': 1.2, 'base_lap_time': 71.0, 'event_name': 'Brazil'},
+
+    'Suzuka': {'abrasion': 1.3, 'speed_factor': 1.3, 'base_lap_time': 90.0, 'event_name': 'Japan', 'total_laps': 53, 'pit_loss': 22.0},
+    'Zandvoort': {'abrasion': 1.0, 'speed_factor': 1.1, 'base_lap_time': 71.0, 'event_name': 'Dutch', 'total_laps': 72, 'pit_loss': 21.0},
+    'Baku': {'abrasion': 0.7, 'speed_factor': 1.25, 'base_lap_time': 103.0, 'event_name': 'Azerbaijan', 'total_laps': 51, 'pit_loss': 20.0},
+    'Singapur': {'abrasion': 0.8, 'speed_factor': 0.9, 'base_lap_time': 95.0, 'event_name': 'Singapore', 'total_laps': 62, 'pit_loss': 28.0},
+    'Las Vegas': {'abrasion': 0.6, 'speed_factor': 1.4, 'base_lap_time': 94.0, 'event_name': 'Las Vegas', 'total_laps': 50, 'pit_loss': 20.0}
 }
 
 def get_track_severity(track_name):

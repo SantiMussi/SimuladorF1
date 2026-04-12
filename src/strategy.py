@@ -66,17 +66,26 @@ class EngineEstrategia:
     def optimizador_determinista(self, compounds, total_race_laps, track_temp):
         """
         Busca las vueltas de parada óptimas para una secuencia de compuestos dada (1 o 2 paradas).
-        Implementa el reseteo de 'edad de la goma' en cada stint.
+        Implementa un Límite de Seguridad Estructural estricto: ninguna goma puede superar el 70% de su vida efectiva.
         """
+        # --- CÁLCULO DE LÍMITES DE SEGURIDAD ESTRUCTURAL ---
+        # Basado en la abrasión del circuito y la vida teórica del compuesto
+        abrasion = CIRCUITOS_CONFIG[self.track_name]['abrasion']
+        limite_vueltas_seguras = {}
+        for c in set(compounds):
+            vida_maxima = COMPOUNDS_PHYSICS[c]['max_life']
+            # Vida efectiva ajustada por la abrasión del circuito
+            vida_efectiva = vida_maxima * (1.0 / abrasion)
+            # Límite estricto del 70% de vida útil (reserva del 30% estructural)
+            limite_vueltas_seguras[c] = vida_efectiva * 0.7
+
         n_paradas = len(compounds) - 1
         mejor_tiempo = float('inf')
         vueltas_optimas = []
         
-        # Pre-calcular perfiles de lap time para cada compuesto posible
-        # (Esto optimiza el cálculo al no repetir RK45)
+        # Pre-calcular perfiles de lap time para cada compuesto
         perfiles = {}
         for c in set(compounds):
-            # Cambiamos temporalmente el compuesto del motor para simular
             original_compound = self.compound
             self.compound = c
             _, tiempos, _ = self.simular_stint(total_race_laps, track_temp)
@@ -85,9 +94,16 @@ class EngineEstrategia:
 
         if n_paradas == 1:
             # Estrategia de 1 Parada: Stint A -> Stint B
-            for p1 in range(5, total_race_laps - 4):
-                t_stint1 = np.sum(perfiles[compounds[0]][:p1])
-                t_stint2 = np.sum(perfiles[compounds[1]][:total_race_laps - p1])
+            for p1 in range(1, total_race_laps):
+                stint1_len = p1
+                stint2_len = total_race_laps - p1
+                
+                # VERIFICACIÓN DE SEGURIDAD ESTRUCTURAL: Antes de calcular tiempos
+                if stint1_len > limite_vueltas_seguras[compounds[0]] or stint2_len > limite_vueltas_seguras[compounds[1]]:
+                    continue
+
+                t_stint1 = np.sum(perfiles[compounds[0]][:stint1_len])
+                t_stint2 = np.sum(perfiles[compounds[1]][:stint2_len])
                 
                 tiempo_total = t_stint1 + self.pit_loss + t_stint2
                 
@@ -97,12 +113,22 @@ class EngineEstrategia:
         
         elif n_paradas == 2:
             # Estrategia de 2 Paradas: Stint A -> Stint B -> Stint C
-            # Usamos bucles anidados según el requerimiento
-            for p1 in range(1, total_race_laps - 2):
+            for p1 in range(1, total_race_laps - 1):
+                # VERIFICACIÓN DE SEGURIDAD: Stint 1
+                if p1 > limite_vueltas_seguras[compounds[0]]:
+                    continue
+                
                 t_stint1 = np.sum(perfiles[compounds[0]][:p1])
-                for p2 in range(p1 + 1, total_race_laps - 1):
-                    t_stint2 = np.sum(perfiles[compounds[1]][:p2 - p1])
-                    t_stint3 = np.sum(perfiles[compounds[2]][:total_race_laps - p2])
+                for p2 in range(p1 + 1, total_race_laps):
+                    stint2_len = p2 - p1
+                    stint3_len = total_race_laps - p2
+                    
+                    # VERIFICACIÓN DE SEGURIDAD: Stint 2 y Stint 3
+                    if stint2_len > limite_vueltas_seguras[compounds[1]] or stint3_len > limite_vueltas_seguras[compounds[2]]:
+                        continue
+
+                    t_stint2 = np.sum(perfiles[compounds[1]][:stint2_len])
+                    t_stint3 = np.sum(perfiles[compounds[2]][:stint3_len])
                     
                     tiempo_total = t_stint1 + self.pit_loss + t_stint2 + self.pit_loss + t_stint3
                     
@@ -110,15 +136,21 @@ class EngineEstrategia:
                         mejor_tiempo = tiempo_total
                         vueltas_optimas = [p1, p2]
 
-        # Construir el 'Race Trace' óptimo por segmentos
+        # Manejo de caso donde ninguna combinación es segura
+        if mejor_tiempo == float('inf'):
+            return {
+                'vueltas_optimas': [],
+                'tiempo_total': float('inf'),
+                'race_trace': np.array([]),
+                'compounds_trace': []
+            }
+
+        # Construir el 'Race Trace' óptimo final
         race_trace = []
         compounds_trace = []
-        current_lap = 1
-        
         periodos = vueltas_optimas + [total_race_laps]
         for i, fin_lap in enumerate(periodos):
             comp = compounds[i]
-            # Extraer el trozo de tiempo correspondiente (reseteando edad)
             duracion = fin_lap - (periodos[i-1] if i > 0 else 0)
             segmento = perfiles[comp][:duracion]
             race_trace.extend(segmento.tolist())
@@ -130,6 +162,7 @@ class EngineEstrategia:
             'race_trace': np.array(race_trace),
             'compounds_trace': compounds_trace
         }
+
 
     def calcular_estrategia_optima(self, laps_sim, tiempos_sim, total_race_laps):
         """

@@ -9,6 +9,9 @@ from strategy import EngineEstrategia
 
 def format_time(total_seconds):
     """Formatea segundos en MM:SS.ms o HH:MM:SS.ms si supera la hora."""
+    if total_seconds is None or not np.isfinite(total_seconds):
+        return "N/A"
+        
     if total_seconds < 3600:
         minutes = int(total_seconds // 60)
         seconds = int(total_seconds % 60)
@@ -145,68 +148,87 @@ def render_live_timing_view():
     idx = max(0, min(int(v_act) - 1, total_race_laps - 1))
 
     st.divider()
+    if not np.isfinite(resultado_opt['tiempo_total']):
+        st.error("⚠️ **ESTRATEGIA NO VIABLE:** Ninguna combinación cumple con el Límite de Seguridad Estructural (70% vida).")
+        return
+
     p_text = " y ".join([f"Vuelta {v}" for v in vueltas_parada])
     st.success(f"🏁 **ESTRATEGIA ÓPTIMA:** Parada en {p_text} | Tiempo de Carrera: {format_time(resultado_opt['tiempo_total'])}")
 
-    m1, m2, m3, m4 = st.columns(4)
+    # --- CÁLCULO DE MÉTRICAS AVANZADAS ---
+    # Pace Delta: Tiempo_Vuelta_Actual - Mejor_Tiempo_Del_Stint_Actual
+    stint_start = 0
+    for p in vueltas_parada:
+        if int(v_act) > p:
+            stint_start = p
+        else:
+            break
+    
+    stint_times = tiempos_race[stint_start:idx+1]
+    best_lap_stint = np.min(stint_times) if len(stint_times) > 0 else tiempos_race[idx]
+    pace_delta = tiempos_race[idx] - best_lap_stint
+    
+    # Fuel Effect: -(self.vuelta_actual * 0.04)
+    fuel_benefit = -(v_act * 0.04)
+
+    m1, m2, m3, m4, m5 = st.columns(5)
     with m1: st.metric("Goma Actual", comp_trace[idx])
     with m2: st.metric("🌡️ Temp. Goma", f"{piecewise_temps[idx]:.1f}°C")
-    with m3: st.metric("⏱️ Lap Time", format_time(tiempos_race[idx]))
+    with m3: st.metric("⏱️ Lap Time", format_time(tiempos_race[idx]), delta=f"{pace_delta:+.2f}s", delta_color="inverse")
     with m4: st.metric("📉 Vida Restante", f"{piecewise_life[idx]:.1f}%")
+    with m5: st.metric("⚖️ Fuel Effect", f"{fuel_benefit:.2f}s", delta="Weight Benefit", delta_color="off")
 
     prog = v_act / total_race_laps
     st.progress(min(1.0, prog))
     st.markdown(f"<p style='text-align: center; color: #00d4ff; font-weight: bold;'>🏁 Progreso: Vuelta {v_act:.1f} / {total_race_laps} ({prog*100:.1f}%)</p>", unsafe_allow_html=True)
 
     st.divider()
-    r1c1, r1c2 = st.columns(2)
-    r2c1, r2c2 = st.columns(2)
+    
+    # --- REESTRUCTURACIÓN DE LA GRILLA DE GRÁFICOS ---
+    # Fila 1: Ritmo Segmentado (100% Ancho)
+    st.subheader("⏱️ Ritmo Segmentado (Pace Analysis)")
+    fig1 = go.Figure()
+    s_l = 1
+    for i, p_lap in enumerate(vueltas_parada + [total_race_laps]):
+        laps = np.arange(s_l, p_lap + 1)
+        vals = tiempos_race[s_l-1:p_lap]
+        fig1.add_trace(go.Scatter(x=laps, y=vals, name=lista_compuestos[i], line=dict(color=col_map.get(lista_compuestos[i]), width=4)))
+        s_l = p_lap + 1
+    y_int = np.interp(v_act, laps_range, tiempos_race)
+    fig1.add_trace(go.Scatter(x=[v_act], y=[y_int], mode='markers', marker=dict(symbol='star', size=18, color='#00d4ff', line=dict(color='white', width=2)), name='Posición'))
+    fig1.update_layout(template="plotly_dark", paper_bgcolor='#0b0f19', plot_bgcolor='#0b0f19', height=400, margin=dict(l=20, r=20, t=20, b=20))
+    st.plotly_chart(fig1, use_container_width=True, key="f_ritmo")
 
-    with r1c1:
-        st.subheader("⏱️ Ritmo Segmentado")
-        fig1 = go.Figure()
-        s_l = 1
-        for i, p_lap in enumerate(vueltas_parada + [total_race_laps]):
-            laps = np.arange(s_l, p_lap + 1)
-            vals = tiempos_race[s_l-1:p_lap]
-            fig1.add_trace(go.Scatter(x=laps, y=vals, name=lista_compuestos[i], line=dict(color=col_map.get(lista_compuestos[i]), width=4)))
-            s_l = p_lap + 1
-        y_int = np.interp(v_act, laps_range, tiempos_race)
-        fig1.add_trace(go.Scatter(x=[v_act], y=[y_int], mode='markers', marker=dict(symbol='star', size=18, color='#00d4ff', line=dict(color='white', width=2)), name='Posición'))
-        fig1.update_layout(template="plotly_dark", paper_bgcolor='#0b0f19', plot_bgcolor='#0b0f19', height=300, margin=dict(l=20, r=20, t=20, b=20))
-        st.plotly_chart(fig1, use_container_width=True, key="f1")
-
-    with r1c2:
-        st.subheader("📊 Tiempo Acumulado")
-        fig2 = go.Figure()
-        acum = np.cumsum(tiempos_race)
-        for i, v in enumerate(vueltas_parada): acum[v:] += pit_loss
-        fig2.add_trace(go.Scatter(x=laps_range, y=acum, fill='tozeroy', line=dict(color='#00d4ff')))
-        fig2.update_layout(template="plotly_dark", paper_bgcolor='#0b0f19', plot_bgcolor='#0b0f19', height=300, margin=dict(l=20, r=20, t=20, b=20))
-        st.plotly_chart(fig2, use_container_width=True, key="f2")
-
-    with r2c1:
+    # Fila 2: Evolución Térmica y Desgaste Mecánico (50/50)
+    col1, col2 = st.columns(2)
+    
+    with col1:
         st.subheader("🌡️ Evolución Térmica")
-        fig3 = go.Figure()
+        fig_termica = go.Figure()
         s_l = 1
         for i, p_lap in enumerate(vueltas_parada + [total_race_laps]):
             l = np.arange(s_l, p_lap + 1)
             v = piecewise_temps[s_l-1:p_lap]
-            fig3.add_trace(go.Scatter(x=l, y=v, name=f"Stint {i+1}", line=dict(color=col_map.get(lista_compuestos[i]), width=3)))
+            fig_termica.add_trace(go.Scatter(x=l, y=v, name=f"Stint {i+1}", 
+                                             line=dict(color=col_map.get(lista_compuestos[i]), width=3)))
             s_l = p_lap + 1
-        fig3.update_layout(template="plotly_dark", paper_bgcolor='#0b0f19', plot_bgcolor='#0b0f19', height=300, margin=dict(l=20, r=20, t=20, b=20))
-        st.plotly_chart(fig3, use_container_width=True, key="f3")
+        fig_termica.update_layout(template="plotly_dark", paper_bgcolor='#0b0f19', plot_bgcolor='#0b0f19', 
+                                  height=300, margin=dict(l=20, r=20, t=20, b=20))
+        st.plotly_chart(fig_termica, use_container_width=True, key="f_temp_live")
 
-    with r2c2:
+    with col2:
         st.subheader("📉 Desgaste Mecánico (%)")
-        fig4 = go.Figure()
+        fig_desgaste = go.Figure()
         s_l = 1
         for i, p_lap in enumerate(vueltas_parada + [total_race_laps]):
             l = np.arange(s_l, p_lap + 1)
             v = piecewise_life[s_l-1:p_lap]
-            fig4.add_trace(go.Scatter(x=l, y=v, name=f"Stint {i+1}", line=dict(color=col_map.get(lista_compuestos[i]), width=3, dash='dash')))
+            fig_desgaste.add_trace(go.Scatter(x=l, y=v, name=f"Stint {i+1}", 
+                                              line=dict(color=col_map.get(lista_compuestos[i]), width=3, dash='dash')))
             s_l = p_lap + 1
-        fig4.update_layout(template="plotly_dark", paper_bgcolor='#0b0f19', plot_bgcolor='#0b0f19', height=300, margin=dict(l=20, r=20, t=20, b=20))
-        st.plotly_chart(fig4, use_container_width=True, key="f4")
+        fig_desgaste.update_layout(template="plotly_dark", paper_bgcolor='#0b0f19', plot_bgcolor='#0b0f19', 
+                                   height=300, margin=dict(l=20, r=20, t=20, b=20))
+        fig_desgaste.update_yaxes(range=[0, 105])
+        st.plotly_chart(fig_desgaste, use_container_width=True, key="f_wear_live")
 
 render_live_timing_view()
