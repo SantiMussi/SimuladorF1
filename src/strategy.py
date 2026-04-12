@@ -1,112 +1,119 @@
 import numpy as np
-import pandas as pd
-from src.metodos_numericos import newton_raphson, simpson_1_3, biseccion, runge_kutta_4
-from src.modelo_ml import entrenar_modelo_degradacion
-from src.extractor_datos import obtener_telemetria_limpia
+from metodos_numericos import rk45_step, least_squares_poly, newton_raphson, romberg_integration, poly_derivative
+from extractor_datos import COMPOUNDS_PHYSICS, CIRCUITOS_CONFIG, get_track_severity
 
-class MotorEstrategia:
-    """Orquesta la IA y los metodos numericos para tomar decisiones de carrera"""
-    def __init__(self, modelo, columnas_entrenamiento):
-        self.modelo = modelo
-        self.columnas_x = columnas_entrenamiento
-
-        self.mapa_compuestos = {'Blando': 'SOFT', 'Medio': 'MEDIUM', 'Duro': 'HARD'}
-
-    def crear_funcion_desgaste(self, compuesto_es, temp_pista):
-        """ Envuelve la predicción de la IA en una función matemática continua T(v).
-        Ahora integra el perfil térmico calculado por RK4 como feature de entrada.
+class EngineEstrategia:
+    def __init__(self, modelo_ml, track_name='Silverstone', compound='SOFT'):
+        self.ml = modelo_ml
+        self.pit_loss = 22.0 # Segundos promedio de un pit stop
+        self.track_name = track_name
+        self.compound = compound
+        
+    def T_v(self, lap, temp):
         """
-        compuesto_en = self.mapa_compuestos.get(compuesto_es, 'SOFT')
-        
-        # Pre-calculamos el perfil térmico con RK4 para asegurar consistencia física
-        from src.extractor_datos import crear_edo_temperatura
-        edo = crear_edo_temperatura(temp_pista, compuesto_en)
-        # Simulamos hasta 80 vueltas con paso fino para una interpolación estable
-        v_perfil, temp_perfil = runge_kutta_4(edo, t0=0, y0=80.0, t_end=80.0, h=0.5)
-        
-        def T(v):
-            # Evitamos que el modelo intente calcular tiempo de vueltas negativas
-            v = max(1.0, float(v))
-
-            # Obtenemos la temperatura física para esa vuelta exacta (Interpolación)
-            t_fisica = np.interp(v, v_perfil, temp_perfil)
-
-            datos = pd.DataFrame({'TyreLife': [v], 'Temp_RK4': [t_fisica]})
-
-            for col in self.columnas_x:
-                if col not in datos.columns:
-                    datos[col] = 1 if col == f'Compound_{compuesto_en}' else 0
-
-            datos = datos[self.columnas_x]
-            
-            # La IA predice (el pipeline se encarga del escalado y poly features)
-            return self.modelo.predict(datos)[0]
-        
-        return T
-
-    def calcular_tiempo_stint(self, T, n_vueltas):
-        """ Utiliza la Regla de Simpson 1/3 para integrar la función T(v) 
-        y obtener el tiempo total acumulado (Rigor Académico).
+        Función de tiempo de vuelta (T) alineada con la predicción pura de la IA.
         """
-        if n_vueltas < 1: return 0
-        # n debe ser par para Simpson 1/3
-        return simpson_1_3(T, 1, n_vueltas, n=max(2, int(n_vueltas) if int(n_vueltas)%2==0 else int(n_vueltas)+1))
-
-    def analizar_stint(self, compuesto_es, vuelta_actual, temp_pista, umbral_perdida = 1.5):
-        """Calcula todo lo que necesita el app.py para llenar las metricas y graficos"""
-        # Pasamos temp_pista para que T(v) conozca el perfil térmico
-        T = self.crear_funcion_desgaste(compuesto_es, temp_pista)
-
-        # Tiempos deltas
-        tiempo_ideal = T(1) # Vuelta de qualy (referencia)
-        tiempo_actual = T(vuelta_actual)
-        delta = tiempo_actual - tiempo_ideal # Cuanto tiempo perdemos por desgaste
-
-        # Crossover Point (Newton Raphson con Derivada Numérica por Diferencias Centrales)
-        def P(v):
-            return T(v) - tiempo_ideal - umbral_perdida
+        # Predicción directa del modelo ML calibrado pasándole la pista actual
+        t_pred = self.ml.predecir_lap(lap, temp, self.compound, track_name=self.track_name)
         
-        def dP(v):
-            h = 1e-4 # Paso para la derivada numérica
-            return (P(v+h) - P(v- h)) / (2*h)
-
-        try:
-            # Buscamos la raíz donde la pérdida de pace cruza el umbral
-            # x0 dinámico según compuesto para mejorar la convergencia
-            x0_map = {'Blando': 15.0, 'Medio': 25.0, 'Duro': 35.0}
-            punto_inicio = x0_map.get(compuesto_es, 20.0)
+        # Penalización térmica SI el neumático se sale de ventana
+        window = COMPOUNDS_PHYSICS.get(self.compound, {'ventana_temp': (90, 110)})['ventana_temp']
+        overheat_penalty = 0
+        if temp > window[1]:
+            overheat_penalty = (temp - window[1]) * 0.4 # 0.4s por cada grado de exceso
             
-            crossover = max(1, int(round(newton_raphson(P, dP, x0=punto_inicio))))
-        except Exception:
-            # Fallback robusto a Bisección. 
-            # Verificamos si existe un cambio de signo en [1, 60]
-            if P(1) * P(60) < 0:
-                crossover = max(1, int(round(biseccion(P, 1, 60))))
-            else:
-                # Si P(60) sigue siendo negativo, la vida útil supera las 60 vueltas
-                crossover = 60
+        return t_pred + overheat_penalty
 
-        # Tiempo Total Acumulado (Integración por Simpson 1/3)
-        tiempo_total_stint = self.calcular_tiempo_stint(T, vuelta_actual)
+    def edo_temperatura(self, t, T_neumatico, T_pista_base):
+        """
+        EDO Térmica Dinámica: Calibrada para RK45.
+        """
+        phys = COMPOUNDS_PHYSICS.get(self.compound, {'friccion_base': 10.0, 'k_disipacion': 0.12})
+        track_config = get_track_severity(self.track_name)
+        
+        # Fricción escala con la severidad de la pista
+        friccion_real = phys['friccion_base'] * track_config['speed_factor']
+        k = phys['k_disipacion']
+        
+        return friccion_real - k * (T_neumatico - T_pista_base)
 
-        # Termodinámica con RK4 para la métrica instantánea
-        from src.extractor_datos import crear_edo_temperatura
-        compuesto_en = self.mapa_compuestos.get(compuesto_es, 'SOFT')
-        edo = crear_edo_temperatura(temp_pista, compuesto_en)
-        _, temps = runge_kutta_4(edo, t0=0, y0=80.0, t_end=vuelta_actual, h=1)
-        temp_goma_rk4 = temps[-1]
+    def simular_stint(self, max_laps, T_pista):
+        """
+        Genera el perfil del stint con evolución térmica.
+        """
+        laps = []
+        tiempos = []
+        temps = []
+        
+        T_actual = 80.0 # Temperatura inicial
+        h = 0.2
+        
+        for lap in range(1, max_laps + 1):
+            tiempo_sim = 0
+            while tiempo_sim < 1.0:
+                T_actual, tiempo_sim, h, success = rk45_step(
+                    lambda t, y: self.edo_temperatura(t, y, T_pista),
+                    tiempo_sim, T_actual, h
+                )
+            
+            lap_time = self.T_v(lap, T_actual)
+            laps.append(lap)
+            tiempos.append(lap_time)
+            temps.append(T_actual)
+            
+        return np.array(laps), np.array(tiempos), np.array(temps)
 
-        # Generar datos para el grafico de Plotly
-        vueltas_proyeccion = list(range(1, 61))
-        tiempos_proyeccion = [T(v) for v in vueltas_proyeccion]
+    def calcular_estrategia_optima(self, laps_sim, tiempos_sim, total_race_laps):
+        """
+        Algoritmo Integral de Tiempo Neto:
+        Compara el tiempo total de carrera terminando con el neumático actual
+        vs el tiempo total parando en cada vuelta posible.
+        """
+        # 1. Ajuste Polinomial para suavizar y poder integrar
+        beta = least_squares_poly(laps_sim, tiempos_sim, degree=2)
+        
+        def RaceTimeAt(v):
+            return np.polyval(beta, v)
+
+        # 2. Calcular tiempo total SIN PARAR (Stint único hasta el final)
+        tiempo_sin_parar = np.sum([RaceTimeAt(v) for v in range(1, total_race_laps + 1)])
+        
+        mejor_tiempo_con_parada = float('inf')
+        mejor_vuelta_parada = -1
+        
+        # 3. Barrido de Crossover: Probar parar en cada vuelta x
+        # p_loss depende del circuito (Monza = 25s)
+        track_data = CIRCUITOS_CONFIG.get(self.track_name, {})
+        p_loss = track_data.get('pit_loss', 25.0)
+        
+        # Probamos paradas lógicas (entre vuelta 5 y el final-5)
+        for x in range(5, total_race_laps - 4):
+            # Tiempo del primer stint (hasta vuelta x)
+            t_stint1 = np.sum([RaceTimeAt(v) for v in range(1, x + 1)])
+            
+            # Tiempo del segundo stint (desde el pit hasta el final)
+            vueltas_restantes = total_race_laps - x
+            t_stint2 = np.sum([RaceTimeAt(v) for v in range(1, vueltas_restantes + 1)])
+            
+            tiempo_total = t_stint1 + p_loss + t_stint2
+            
+            if tiempo_total < mejor_tiempo_con_parada:
+                mejor_tiempo_con_parada = tiempo_total
+                mejor_vuelta_parada = x
+                
+        # 4. VALIDACIÓN DE AHORRO NETO ESTRICTO
+        ahorro_neto = tiempo_sin_parar - mejor_tiempo_con_parada
+        
+        # Si el ahorro neto no supera el beneficio del pit, no paramos
+        if ahorro_neto <= 0:
+            crossover_final = total_race_laps
+        else:
+            crossover_final = mejor_vuelta_parada
 
         return {
-            "tiempo_ideal": tiempo_ideal,
-            "tiempo_actual": tiempo_actual,
-            "delta_tiempo": delta,
-            "crossover_point": crossover,
-            "temp_goma": temp_goma_rk4,
-            "tiempo_total": tiempo_total_stint,
-            "grafico_x": vueltas_proyeccion,
-            "grafico_y": tiempos_proyeccion
+            'crossover_lap': int(crossover_final),
+            'total_time_no_pit': tiempo_sin_parar,
+            'total_time_pit': mejor_tiempo_con_parada,
+            'net_gain': ahorro_neto,
+            'poly_coeffs': beta
         }

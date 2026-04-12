@@ -1,75 +1,76 @@
-import pandas as pd 
-import numpy as np
-from sklearn.preprocessing import PolynomialFeatures, StandardScaler
 from sklearn.linear_model import Ridge
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.preprocessing import PolynomialFeatures, StandardScaler
 from sklearn.pipeline import Pipeline
+import pandas as pd
+import numpy as np
 
-def entrenar_modelo_degradacion(df):
-    """
-    Entrena el modelo de ML (Regresión Polinomial) para predecir el tiempo 
-    de vuelta basándose en el desgaste del neumático y el compuesto.
-    """
-
-    #Transformamos el texto en numeros
-    #Convierte 'Compound' en columnas como "COMPOUND_SOFT" (1 o 0)
-    df_ml = pd.get_dummies(df, columns=["Compound"], drop_first=False)
-
-    # Definir que miramos (X) y que queremos predecir (Y)
-    columnas_x = [col for col in df_ml.columns if col in ['TyreLife', 'Temp_RK4', 'Compound_SOFT', 'Compound_MEDIUM', 'Compound_HARD']]
-    X = df_ml[columnas_x]
-
-    #Prediccion: tiempo de vuelta en segundos
-    y = df_ml['LapTime_sec_corrected']
-    
-    #Separar 80% para entrenar y 20% para evaluar
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
- 
-    # Usamos Ridge (L2 Regularización) para evitar inestabilidad por colinealidad
-    # (TyreLife y Temp_RK4 están altamente correlacionados en un solo stint)
-    modelo = Pipeline([
-        ('scaler', StandardScaler()),
-        ('poly', PolynomialFeatures(degree=2)),
-        ('regressor', Ridge(alpha=0.1))
-    ])
-    
-    modelo.fit(X_train, y_train)
-
-    # Evaluar a la IA con el 20% restante
-    predicciones_test = modelo.predict(X_test)
-    error = mean_absolute_error(y_test, predicciones_test)
-    precision = r2_score(y_test, predicciones_test)
-
-    return modelo, None, columnas_x, error, precision # poly ya está dentro del pipeline
-
-
-#TEST
-if __name__ == "__main__":
-    from src.extractor_datos import obtener_telemetria_limpia
-    
-    # Extraemos los datos
-    df = obtener_telemetria_limpia(2024, 'Bahrein', 'R', 'VER', T_pista=35.0)
-
-    print('Entrenando modelo de MLL Polinomial..')
-    modelo, _, columnas_entrenamiento, error, precision = entrenar_modelo_degradacion(df)
-    print('Modelo entrenado!')
-    
-    print('\nRESULTADOS DE LA EVALUACION:')
-    print(f'Error Promedio (MAE): Le erra por {error:.3f} segundos')
-    print(f'Precision (R2): {precision * 100:.1f}%\n')
-
-    # Le hacemos la pregunta imposible a la ia (Extrapolación)
-    # Simulamos un neumático de 25 vueltas que está a ~105 grados
-    datos_futuros = pd.DataFrame({'TyreLife': [25], 'Temp_RK4': [105.0]})
-    
-    for col in columnas_entrenamiento:
-        if col not in datos_futuros.columns:
-            datos_futuros[col] = 1 if col == 'Compound_SOFT' else 0
-
-    datos_futuros = datos_futuros[columnas_entrenamiento]
-
-    # La magic de la ia (Ya no necesitamos transformar manualmente, el pipeline lo hace)
-    prediccion = modelo.predict(datos_futuros)
-    print('PREDICCION DE LA IA')
-    print(f'Con un neumatico SOFT con 25 vueltas, el tiempo estimado es {prediccion[0]:.3f} segundos')
+class PredictorDegradacion:
+    def __init__(self):
+        # Pipeline: Expansión Cuadrática -> Escalado -> Ridge Regression
+        # Permitimos coeficientes negativos para capturar el 'dip' del warm-up
+        self.model = Pipeline([
+            ('poly', PolynomialFeatures(degree=2, include_bias=False)),
+            ('scaler', StandardScaler()),
+            ('reg', Ridge(alpha=0.1))
+        ])
+        self.compound_map = {'SOFT': 0, 'MEDIUM': 1, 'HARD': 2}
+        self.offset_calibracion = 0.0
+        
+    def entrenar(self, df, track_base_time=81.5):
+        # Mapear compuestos a valores numéricos
+        df = df.copy()
+        df['Compound_Idx'] = df['Compound'].map(self.compound_map)
+        
+        X = df[['TyreLife', 'TrackTemp', 'Compound_Idx']]
+        y = df['LapTime']
+        
+        self.model.fit(X, y)
+        
+        # ANCLAJE DE INTERCEPT (Calibración Estricta al Peak Grip en Vuelta 3)
+        # Buscamos el tiempo en la vuelta 3 que es donde ahora forzamos el pico
+        t_peak_pred = self.predecir_lap(3, 100, 'SOFT', track_name='Monza', apply_offset=False)
+        self.offset_calibracion = track_base_time - t_peak_pred
+        
+        print(f"Modelo calibrado al Peak Grip. Desfase corregido: {self.offset_calibracion:.3f}s")
+        
+    def predecir_lap(self, tyre_life, temp_rk4, compound_name, track_name='Silverstone', apply_offset=True):
+        compound_idx = self.compound_map.get(compound_name, 1)
+        X_input = pd.DataFrame([[tyre_life, temp_rk4, compound_idx]], 
+                              columns=['TyreLife', 'TrackTemp', 'Compound_Idx'])
+        
+        # 1. PACE OFFSET INICIAL (Sincronizado con el compuesto)
+        pace_offsets = {'SOFT': -1.2, 'MEDIUM': 0.0, 'HARD': 1.8}
+        current_pace_offset = pace_offsets.get(compound_name, 0.0)
+        
+        # Predicción base del modelo
+        pred_base = self.model.predict(X_input)[0] + current_pace_offset
+        
+        # Obtener física del compuesto Y PISTA para degradación dinámica
+        from extractor_datos import COMPOUNDS_PHYSICS, CIRCUITOS_CONFIG
+        phys = COMPOUNDS_PHYSICS.get(compound_name, {'max_life': 40})
+        m_life_base = phys['max_life']
+        
+        # ESCALADO POR PISTA (NUEVA LÓGICA SOLICITADA)
+        track_abrasion = CIRCUITOS_CONFIG.get(track_name, {'abrasion': 1.0})['abrasion']
+        m_life_efectiva = m_life_base * (1.0 / track_abrasion)
+        
+        # 2. MULTIPLICADORES DE DEGRADACIÓN
+        deg_multipliers = {'SOFT': 1.8, 'MEDIUM': 1.0, 'HARD': 0.4}
+        mult = deg_multipliers.get(compound_name, 1.0)
+        
+        # 3. Warm-up Penalty (Out-lap lenta)
+        warmup_penalty = 0
+        if tyre_life < 4:
+            warmup_penalty = 1.6 * np.exp(-(tyre_life - 0.8) / 0.8)
+        
+        # 4. Peak Grip Window
+        peak_shape = 0.05 * (max(0, 4 - tyre_life)**2)
+        
+        # 5. Degradación cuadrática DINÁMICA (Escalada por m_life_efectiva)
+        deg_dinamica = 0
+        if tyre_life > 5:
+            # El factor ahora usa m_life_efectiva de la pista
+            factor_base = 5.0 / ((m_life_efectiva - 5)**2)
+            deg_dinamica = (factor_base * mult) * (tyre_life - 5)**2
+            
+        return pred_base + (self.offset_calibracion if apply_offset else 0) + warmup_penalty + peak_shape + deg_dinamica
