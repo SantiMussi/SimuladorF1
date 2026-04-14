@@ -199,15 +199,31 @@ def render_live_timing_view():
     # Fila 1: Ritmo Segmentado (100% Ancho)
     st.subheader("⏱️ Ritmo Segmentado (Pace Analysis)")
     fig1 = go.Figure()
+    
+    # Agregar líneas verticales de PIT STOP primero para que estén al fondo
+    for p_lap in vueltas_parada:
+        fig1.add_vline(x=p_lap, line_width=2, line_dash="dash", line_color="#ff4b4b", opacity=0.6)
+        fig1.add_annotation(x=p_lap, y=0.05, yref="paper", text="<b>BOX</b>", showarrow=False, 
+                           font=dict(color="#ff4b4b", size=12), bgcolor="rgba(15, 23, 42, 0.8)")
+
     s_l = 1
     for i, p_lap in enumerate(vueltas_parada + [total_race_laps]):
         laps = np.arange(s_l, p_lap + 1)
         vals = tiempos_race[s_l-1:p_lap]
-        fig1.add_trace(go.Scatter(x=laps, y=vals, name=lista_compuestos[i], line=dict(color=col_map.get(lista_compuestos[i]), width=4)))
+        fig1.add_trace(go.Scatter(x=laps, y=vals, name=f"Stint {i+1}: {lista_compuestos[i]}", 
+                                 line=dict(color=col_map.get(lista_compuestos[i]), width=4)))
         s_l = p_lap + 1
+        
     y_int = np.interp(v_act, laps_range, tiempos_race)
-    fig1.add_trace(go.Scatter(x=[v_act], y=[y_int], mode='markers', marker=dict(symbol='star', size=18, color='#00d4ff', line=dict(color='white', width=2)), name='Posición'))
-    fig1.update_layout(template="plotly_dark", paper_bgcolor='#0b0f19', plot_bgcolor='#0b0f19', height=400, margin=dict(l=20, r=20, t=20, b=20))
+    fig1.add_trace(go.Scatter(x=[v_act], y=[y_int], mode='markers', 
+                             marker=dict(symbol='star', size=18, color='#00d4ff', 
+                             line=dict(color='white', width=2)), name='Posición Actual'))
+    
+    fig1.update_layout(template="plotly_dark", paper_bgcolor='#0b0f19', plot_bgcolor='#0b0f19', 
+                      height=400, margin=dict(l=20, r=20, t=20, b=20),
+                      legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
+    fig1.update_yaxes(title_text="Lap Time (s)")
+    fig1.update_xaxes(title_text="Vuelta")
     st.plotly_chart(fig1, use_container_width=True, key="f_ritmo")
 
     # Fila 2: Evolución Térmica y Desgaste Mecánico (50/50)
@@ -216,6 +232,10 @@ def render_live_timing_view():
     with col1:
         st.subheader("🌡️ Evolución Térmica")
         fig_termica = go.Figure()
+        
+        for p_lap in vueltas_parada:
+            fig_termica.add_vline(x=p_lap, line_width=1, line_dash="dash", line_color="#ff4b4b", opacity=0.4)
+
         s_l = 1
         for i, p_lap in enumerate(vueltas_parada + [total_race_laps]):
             l = np.arange(s_l, p_lap + 1)
@@ -232,6 +252,10 @@ def render_live_timing_view():
         # Asegúrate de que piecewise_life tenga datos antes de graficar
         if len(piecewise_life) > 0:
             fig_desgaste = go.Figure()
+
+            for p_lap in vueltas_parada:
+                fig_desgaste.add_vline(x=p_lap, line_width=1, line_dash="dash", line_color="#ff4b4b", opacity=0.4)
+
             s_l = 1
             for i, p_lap in enumerate(vueltas_parada + [total_race_laps]):
                 l = np.arange(s_l, p_lap + 1)
