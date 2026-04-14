@@ -51,6 +51,7 @@ class EngineEstrategia:
         
         for lap in range(1, max_laps + 1):
             lap_progress = lap / max_laps # O usa la vida efectiva real
+            tiempo_sim = 0.0
             while tiempo_sim < 1.0:
                 T_actual, tiempo_sim, h, success = rk45_step(
                     lambda t, y: self.edo_temperatura(t, y, T_pista, lap_progress),
