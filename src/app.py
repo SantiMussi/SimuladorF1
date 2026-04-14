@@ -53,20 +53,20 @@ if 'vuelta_actual' not in st.session_state:
 if 'playing' not in st.session_state:
     st.session_state.playing = False
 
-st.set_page_config(page_title="F1 Strategy Wall", layout="wide", page_icon="🏎️")
+st.set_page_config(page_title="F1 Strategy Wall", layout="wide", page_icon="F1")
 aplicar_estilos()
 
 # --- Título ---
-st.markdown("<h1 style='text-align: center; color: #00d4ff; margin-bottom: 0;'>🏎️ F1 STRATEGY CONTROL WALL</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #00d4ff; margin-bottom: 0;'>F1 STRATEGY CONTROL WALL</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: #94a3b8; font-weight: 500; margin-top: 0;'>Enterprise Race Engineering Suite</p>", unsafe_allow_html=True)
 
 # --- Sidebar ---
-st.sidebar.header("🛠️ Race Strategy")
-track_name = st.sidebar.selectbox("🏎️ Circuito", list(CIRCUITOS_CONFIG.keys()))
+st.sidebar.header("Race Strategy")
+track_name = st.sidebar.selectbox("Circuito", list(CIRCUITOS_CONFIG.keys()))
 track_settings = CIRCUITOS_CONFIG.get(track_name, {})
-track_temp = st.sidebar.slider("🌡️ Temperatura de Pista (°C)", 15, 60, 35)
-total_race_laps = st.sidebar.number_input("🏁 Vueltas Totales", 30, 90, track_settings.get('total_laps', 50))
-pit_loss = st.sidebar.slider("⏱️ Costo de Pit Stop (s)", 15.0, 30.0, track_settings.get('pit_loss', 22.0))
+track_temp = st.sidebar.slider("Temperatura de Pista (°C)", 15, 60, 35)
+total_race_laps = st.sidebar.number_input("Vueltas Totales", 30, 90, track_settings.get('total_laps', 50))
+pit_loss = st.sidebar.slider("Costo de Pit Stop (s)", 15.0, 30.0, track_settings.get('pit_loss', 22.0))
 
 st.sidebar.markdown("---")
 tipo_estrategia = st.sidebar.radio("Tipo de Estrategia", ["1 Parada", "2 Paradas"], horizontal=True)
@@ -81,14 +81,14 @@ else:
     lista_compuestos = [s1, s2, s3]
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("🎮 Reproducción Live Timing")
+st.sidebar.subheader("Reproducción Live Timing")
 col_play, col_stop = st.sidebar.columns(2)
-if col_play.button("▶ Iniciar Simulación"):
+if col_play.button("Iniciar Simulación"):
     st.session_state.playing = True
-if col_stop.button("⏸ Detener"):
+if col_stop.button("Detener"):
     st.session_state.playing = False
 
-st.session_state.vuelta_actual = st.sidebar.slider("📍 Vuelta Actual", 1.0, float(total_race_laps), value=st.session_state.vuelta_actual, step=0.1)
+st.session_state.vuelta_actual = st.sidebar.slider("Vuelta Actual", 1.0, float(total_race_laps), value=st.session_state.vuelta_actual, step=0.1)
 
 # --- Backend Pipeline Caching ---
 @st.cache_data
@@ -154,11 +154,11 @@ def render_live_timing_view():
 
     st.divider()
     if not np.isfinite(resultado_opt['tiempo_total']):
-        st.error("⚠️ **ESTRATEGIA NO VIABLE:** Ninguna combinación cumple con el Límite de Seguridad Estructural (70% vida).")
+        st.error("ESTRATEGIA NO VIABLE: Ninguna combinación cumple con el Límite de Seguridad Estructural (70% vida).")
         return
 
     p_text = " y ".join([f"Vuelta {v}" for v in vueltas_parada])
-    st.success(f"🏁 **ESTRATEGIA ÓPTIMA:** Parada en {p_text} | Tiempo de Carrera: {format_time(resultado_opt['tiempo_total'])}")
+    st.success(f"ESTRATEGIA ÓPTIMA: Parada en {p_text} | Tiempo de Carrera: {format_time(resultado_opt['tiempo_total'])}")
 
     # --- CÁLCULO DE MÉTRICAS AVANZADAS ---
     # Pace Delta: Tiempo_Vuelta_Actual - Mejor_Tiempo_Del_Stint_Actual
@@ -182,25 +182,25 @@ def render_live_timing_view():
     # 4. Renderizado de métricas
     m1, m2, m3, m4 = st.columns(4)
     with m1: st.metric("Goma Actual", comp_trace[idx])
-    with m2: st.metric("🌡️ Temp. Goma", f"{piecewise_temps[idx]:.1f}°C")
+    with m2: st.metric("Temperatura Goma", f"{piecewise_temps[idx]:.1f}°C")
     with m3: 
         st.metric(
-            "⏱️ Lap Time", 
+            "Lap Time", 
             format_time(tiempos_race[idx]), 
             delta=f"{pace_delta:+.3f}s", 
             delta_color="inverse"
         )
-    with m4: st.metric("📉 Vida Restante", f"{piecewise_life[idx]:.1f}%")
+    with m4: st.metric("Vida Restante", f"{piecewise_life[idx]:.1f}%")
 
     prog = v_act / total_race_laps
     st.progress(min(1.0, prog))
-    st.markdown(f"<p style='text-align: center; color: #00d4ff; font-weight: bold;'>🏁 Progreso: Vuelta {v_act:.1f} / {total_race_laps} ({prog*100:.1f}%)</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='text-align: center; color: #00d4ff; font-weight: bold;'>Progreso: Vuelta {v_act:.1f} / {total_race_laps} ({prog*100:.1f}%)</p>", unsafe_allow_html=True)
 
     st.divider()
     
     # --- REESTRUCTURACIÓN DE LA GRILLA DE GRÁFICOS ---
     # Fila 1: Ritmo Segmentado (100% Ancho)
-    st.subheader("⏱️ Ritmo Segmentado (Pace Analysis)")
+    st.subheader("Ritmo Segmentado (Pace Analysis)")
     fig1 = go.Figure()
     
     # Agregar líneas verticales de PIT STOP primero para que estén al fondo
@@ -233,7 +233,7 @@ def render_live_timing_view():
     col1, col2 = st.columns(2)
     
     with col1:
-        st.subheader("🌡️ Evolución Térmica")
+        st.subheader("Evolución Térmica")
         fig_termica = go.Figure()
         
         for p_lap in vueltas_parada:
@@ -251,7 +251,7 @@ def render_live_timing_view():
         st.plotly_chart(fig_termica, use_container_width=True, key="f_temp_live")
 
     with col2:
-        st.subheader("📉 Desgaste Mecánico (%)")
+        st.subheader("Desgaste Mecánico (%)")
         # Asegúrate de que piecewise_life tenga datos antes de graficar
         if len(piecewise_life) > 0:
             fig_desgaste = go.Figure()
