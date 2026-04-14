@@ -3,14 +3,14 @@ import pandas as pd
 import numpy as np
 
 COMPOUNDS_PHYSICS = {
-    'SOFT': {'friccion_base': 11.5, 'k_disipacion': 0.20, 'desgaste_base': 0.045, 'ventana_temp': (95, 115), 'max_life': 25},
-    'MEDIUM': {'friccion_base': 8.0, 'k_disipacion': 0.17, 'desgaste_base': 0.030, 'ventana_temp': (90, 110), 'max_life': 40},
-    'HARD': {'friccion_base': 7.6, 'k_disipacion': 0.16, 'desgaste_base': 0.020, 'ventana_temp': (85, 105), 'max_life': 65}
+    'SOFT': {'friccion_base': 11.5, 'k_disipacion': 0.20, 'desgaste_base': 0.045, 'ventana_temp': (95, 105), 'max_life': 25},
+    'MEDIUM': {'friccion_base': 8.0, 'k_disipacion': 0.17, 'desgaste_base': 0.030, 'ventana_temp': (90, 100), 'max_life': 40},
+    'HARD': {'friccion_base': 7.6, 'k_disipacion': 0.16, 'desgaste_base': 0.020, 'ventana_temp': (85, 95), 'max_life': 65}
 }
 
 CIRCUITOS_CONFIG = {
-    'Hungría': {'abrasion': 0.65, 'speed_factor': 0.9, 'base_lap_time': 80.0, 'event_name': 'Hungary'},
-    'Silverstone': {'abrasion': 1.25, 'speed_factor': 1.4, 'base_lap_time': 90.0, 'event_name': 'Great Britain'},
+    'Hungría': {'abrasion': 0.65, 'speed_factor': 0.9, 'base_lap_time': 80.0, 'event_name': 'Hungary', 'total_laps': 70},
+    'Silverstone': {'abrasion': 1.25, 'speed_factor': 1.4, 'base_lap_time': 90.0, 'event_name': 'Great Britain', 'total_laps': 52},
     'Spa': {'abrasion': 1.25, 'speed_factor': 1.5, 'base_lap_time': 105.0, 'event_name': 'Belgium'},
     'Monza': {'abrasion': 0.8, 'speed_factor': 1.15, 'base_lap_time': 81.5, 'event_name': 'Italy', 'total_laps': 53, 'pit_loss': 25.0},
     'Interlagos': {'abrasion': 1.1, 'speed_factor': 1.2, 'base_lap_time': 71.0, 'event_name': 'Brazil'},

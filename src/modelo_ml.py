@@ -39,7 +39,7 @@ class PredictorDegradacion:
                               columns=['TyreLife', 'TrackTemp', 'Compound_Idx'])
         
         # 1. PACE OFFSET INICIAL (Sincronizado con el compuesto)
-        pace_offsets = {'SOFT': -1.2, 'MEDIUM': 0.0, 'HARD': 1.8}
+        pace_offsets = {'SOFT': -0.8, 'MEDIUM': 0.0, 'HARD': 0.5}
         current_pace_offset = pace_offsets.get(compound_name, 0.0)
         
         # Predicción base del modelo
@@ -50,7 +50,7 @@ class PredictorDegradacion:
         phys = COMPOUNDS_PHYSICS.get(compound_name, {'max_life': 40})
         m_life_base = phys['max_life']
         
-        # ESCALADO POR PISTA (NUEVA LÓGICA SOLICITADA)
+        # ESCALADO POR PISTA 
         track_abrasion = CIRCUITOS_CONFIG.get(track_name, {'abrasion': 1.0})['abrasion']
         m_life_efectiva = m_life_base * (1.0 / track_abrasion)
         
@@ -67,12 +67,12 @@ class PredictorDegradacion:
         peak_shape = 0.05 * (max(0, 4 - tyre_life)**2)
         
         # 5. Degradación cuadrática DINÁMICA (Escalada por m_life_efectiva)
-        # Paracaídas Anti-Overflow: Límite máximo de 20s de pérdida (Corrección Quirúrgica)
+        # Paracaídas Anti-Overflow: Límite máximo de 20s de pérdida
         deg_dinamica = 0
         if tyre_life > 5:
             # d y k_efectivo calibrados para el modelo físico
             d = phys.get('desgaste_base', 0.05) * mult
-            k_efectivo = 0.12 * track_abrasion
+            k_efectivo = 0.18 * track_abrasion
             deg_dinamica = min(d * np.exp(k_efectivo * (tyre_life - 5)), 20.0)
             
         return pred_base + (self.offset_calibracion if apply_offset else 0) + warmup_penalty + peak_shape + deg_dinamica

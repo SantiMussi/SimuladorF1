@@ -164,19 +164,28 @@ def render_live_timing_view():
         else:
             break
     
-    stint_times = tiempos_race[stint_start:idx+1]
-    best_lap_stint = np.min(stint_times) if len(stint_times) > 0 else tiempos_race[idx]
-    pace_delta = tiempos_race[idx] - best_lap_stint
-    
-    # Fuel Effect: -(self.vuelta_actual * 0.04)
+    # 2. Delta respecto a la vuelta anterior (Live Pace)
+    # Si es la primera vuelta del stint, el delta es 0.0
+    if idx > stint_start:
+        pace_delta = tiempos_race[idx] - tiempos_race[idx-1]
+    else:
+        pace_delta = 0.0
+
+    # 3. Fuel Effect (Opcional, si querés mantenerlo en la métrica 5)
     fuel_benefit = -(v_act * 0.04)
 
-    m1, m2, m3, m4, m5 = st.columns(5)
+    # 4. Renderizado de métricas
+    m1, m2, m3, m4 = st.columns(4)
     with m1: st.metric("Goma Actual", comp_trace[idx])
     with m2: st.metric("🌡️ Temp. Goma", f"{piecewise_temps[idx]:.1f}°C")
-    with m3: st.metric("⏱️ Lap Time", format_time(tiempos_race[idx]), delta=f"{pace_delta:+.2f}s", delta_color="inverse")
+    with m3: 
+        st.metric(
+            "⏱️ Lap Time", 
+            format_time(tiempos_race[idx]), 
+            delta=f"{pace_delta:+.3f}s", 
+            delta_color="inverse"
+        )
     with m4: st.metric("📉 Vida Restante", f"{piecewise_life[idx]:.1f}%")
-    with m5: st.metric("⚖️ Fuel Effect", f"{fuel_benefit:.2f}s", delta="Weight Benefit", delta_color="off")
 
     prog = v_act / total_race_laps
     st.progress(min(1.0, prog))
@@ -218,17 +227,31 @@ def render_live_timing_view():
 
     with col2:
         st.subheader("📉 Desgaste Mecánico (%)")
-        fig_desgaste = go.Figure()
-        s_l = 1
-        for i, p_lap in enumerate(vueltas_parada + [total_race_laps]):
-            l = np.arange(s_l, p_lap + 1)
-            v = piecewise_life[s_l-1:p_lap]
-            fig_desgaste.add_trace(go.Scatter(x=l, y=v, name=f"Stint {i+1}", 
-                                              line=dict(color=col_map.get(lista_compuestos[i]), width=3, dash='dash')))
-            s_l = p_lap + 1
-        fig_desgaste.update_layout(template="plotly_dark", paper_bgcolor='#0b0f19', plot_bgcolor='#0b0f19', 
-                                   height=300, margin=dict(l=20, r=20, t=20, b=20))
-        fig_desgaste.update_yaxes(range=[0, 105])
-        st.plotly_chart(fig_desgaste, use_container_width=True, key="f_wear_live")
+        # Asegúrate de que piecewise_life tenga datos antes de graficar
+        if len(piecewise_life) > 0:
+            fig_desgaste = go.Figure()
+            s_l = 1
+            for i, p_lap in enumerate(vueltas_parada + [total_race_laps]):
+                l = np.arange(s_l, p_lap + 1)
+                v = piecewise_life[s_l-1:p_lap]
+                fig_desgaste.add_trace(go.Scatter(
+                    x=l, y=v, 
+                    name=f"Stint {i+1}", 
+                    line=dict(color=col_map.get(lista_compuestos[i]), width=3, dash='dash')
+                ))
+                s_l = p_lap + 1
+                
+            fig_desgaste.update_layout(
+                template="plotly_dark", 
+                paper_bgcolor='#0b0f19', 
+                plot_bgcolor='#0b0f19', 
+                height=300, 
+                margin=dict(l=20, r=20, t=20, b=20),
+                showlegend=False # Quitar leyenda ayuda a la velocidad de renderizado
+            )
+            fig_desgaste.update_yaxes(range=[0, 105])
+            
+            # USA UNA KEY ESTÁTICA Y ÚNICA
+            st.plotly_chart(fig_desgaste, use_container_width=True, key="grafico_desgaste_fijo")
 
 render_live_timing_view()
