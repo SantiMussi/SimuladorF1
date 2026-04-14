@@ -9,22 +9,25 @@ class EngineEstrategia:
         self.track_name = track_name
         self.compound = compound
         
-    def T_v(self, lap, temp):
+    def T_v(self, lap, temp, current_absolute_lap=None):
         """
-        Función de tiempo de vuelta (T) alineada con la predicción pura de la IA.
+        Función de tiempo de vuelta con penalización térmica y beneficio de combustible topado.
         """
-        # Predicción directa del modelo ML calibrado pasándole la pista actual
         t_pred = self.ml.predecir_lap(lap, temp, self.compound, track_name=self.track_name)
         
-        # Penalización térmica SI el neumático se sale de ventana
+        # Penalización térmica
         window = COMPOUNDS_PHYSICS.get(self.compound, {'ventana_temp': (90, 110)})['ventana_temp']
         overheat_penalty = 0
         if temp > window[1]:
-            overheat_penalty = (temp - window[1]) * 0.4 # 0.4s por cada grado de exceso
-            
-        return t_pred + overheat_penalty
+            overheat_penalty = (temp - window[1]) * 0.4 
 
-    # En strategy.py, modifica edo_temperatura para aceptar el desgaste actual
+        # Beneficio de combustible (0.04s por vuelta, topado a 3.5s para realismo)
+        fuel_benefit = 0
+        if current_absolute_lap:
+            fuel_benefit = min(3.5, current_absolute_lap * 0.04)
+            
+        return t_pred + overheat_penalty - fuel_benefit
+
     def edo_temperatura(self, t, T_neumatico, T_pista_base, lap_progress):
         phys = COMPOUNDS_PHYSICS.get(self.compound, {'friccion_base': 10.0, 'k_disipacion': 0.12})
         track_config = get_track_severity(self.track_name)
@@ -38,19 +41,36 @@ class EngineEstrategia:
         
         return friccion_real - k * (T_neumatico - T_pista_base)
 
-    def simular_stint(self, max_laps, T_pista):
+    def simular_stint(self, max_laps, T_pista, start_race_lap=1):
         """
-        Genera el perfil del stint con evolución térmica.
+        Genera el perfil del stint integrando el Factor de Carga Dinámico por peso de combustible.
         """
-        laps = []
-        tiempos = []
-        temps = []
-        
-        T_actual = 80.0 # Temperatura inicial
+        laps, tiempos, temps, wear_trace = [], [], [], []
+        T_actual = 80.0 
         h = 0.2
         
-        for lap in range(1, max_laps + 1):
-            lap_progress = lap / max_laps # O usa la vida efectiva real
+        # Parámetros del circuito
+        track_data = CIRCUITOS_CONFIG.get(self.track_name, {'abrasion': 1.0, 'total_laps': 70})
+        abrasion = track_data['abrasion']
+        total_laps_gp = track_data['total_laps']
+        
+        # Parámetros del compuesto
+        phys = COMPOUNDS_PHYSICS.get(self.compound, {'max_life': 40, 'ventana_temp': (90, 110)})
+        vida_efectiva = phys['max_life'] * (1.0 / abrasion)
+        ventana_max = phys['ventana_temp'][1]
+        
+        uso_acumulado = 0.0 
+        
+        for lap_idx in range(max_laps):
+            current_lap = lap_idx + 1
+            absolute_lap = start_race_lap + lap_idx 
+            
+            # --- FACTOR DE CARGA DINÁMICO (REALISMO) ---
+            # El auto es más pesado al principio (mayor desgaste) y más liviano al final.
+            # Rango: 1.05 (pesado) -> 0.95 (liviano)
+            load_factor = 1.05 - (0.1 * (absolute_lap / total_laps_gp))
+            
+            lap_progress = current_lap / max_laps
             tiempo_sim = 0.0
             while tiempo_sim < 1.0:
                 T_actual, tiempo_sim, h, success = rk45_step(
@@ -58,12 +78,31 @@ class EngineEstrategia:
                     tiempo_sim, T_actual, h
                 )
             
-            lap_time = self.T_v(lap, T_actual)
-            laps.append(lap)
+            # El estrés base se ve afectado por el peso del auto
+            stres_base = 1.0 * load_factor
+            
+            # Acoplamiento térmico: el calor extremo anula el beneficio del peso bajo
+            if T_actual > ventana_max:
+                factor_estres = stres_base + (T_actual - ventana_max) * 0.02
+            else:
+                factor_estres = stres_base
+                
+            uso_acumulado += factor_estres
+            
+            # Degradación No Lineal (Cliff de rendimiento)
+            usage_ratio = uso_acumulado / vida_efectiva
+            desgaste_mecanico = min(100.0, (usage_ratio ** 1.4) * 100.0)
+            vida_restante = 100.0 - desgaste_mecanico
+            
+            # Cálculo de tiempo con combustible dinámico
+            lap_time = self.T_v(current_lap, T_actual, current_absolute_lap=absolute_lap)
+            
+            laps.append(current_lap)
             tiempos.append(lap_time)
             temps.append(T_actual)
+            wear_trace.append(max(0.0, vida_restante))
             
-        return np.array(laps), np.array(tiempos), np.array(temps)
+        return np.array(laps), np.array(tiempos), np.array(temps), np.array(wear_trace)
 
     def optimizador_determinista(self, compounds, total_race_laps, track_temp):
         """
@@ -89,7 +128,7 @@ class EngineEstrategia:
         for c in set(compounds):
             original_compound = self.compound
             self.compound = c
-            _, tiempos, _ = self.simular_stint(total_race_laps, track_temp)
+            _, tiempos, _, _ = self.simular_stint(total_race_laps, track_temp)
             perfiles[c] = tiempos
             self.compound = original_compound
 
@@ -103,10 +142,6 @@ class EngineEstrategia:
                 if stint1_len > limite_vueltas_seguras[compounds[0]] or stint2_len > limite_vueltas_seguras[compounds[1]]:
                     continue
 
-                # Calcular beneficio de combustible acumulado para cada stint
-                # Stint 1: de vuelta 1 a p1
-                # Stint 2: de vuelta p1+1 a total_race_laps
-                
                 # Usamos una aproximación del beneficio promedio por vuelta para el tiempo total
                 # Beneficio = 0.04 * vuelta_absoluta
                 beneficio_fuel_s1 = np.sum(np.arange(1, stint1_len + 1)) * 0.04
@@ -195,7 +230,6 @@ class EngineEstrategia:
         # 1. Ajuste Polinomial para Stint 1 (Compuesto Actual)
         beta = least_squares_poly(laps_sim, tiempos_sim, degree=2)
         
-        # --- CORRECCIÓN REGLA FIA: Crossover Asimétrico ---
         # Si elegimos SOFT o MEDIUM, el Stint 2 es HARD. Si elegimos HARD, es SOFT.
         op_compound = 'HARD' if self.compound in ['SOFT', 'MEDIUM'] else 'SOFT'
         laps_ref = np.arange(1, total_race_laps + 1)

@@ -117,13 +117,9 @@ def get_sim_data(track_name, track_temp, total_race_laps, pit_loss, lista_compue
         comp = lista_compuestos[i]
         duracion = p_lap - (vueltas_parada[i-1] if i > 0 else 0)
         engine.compound = comp
-        _, _, t_sector = engine.simular_stint(duracion, track_temp)
+        _, _, t_sector, l_sector = engine.simular_stint(duracion, track_temp)
         piecewise_temps.extend(t_sector.tolist())
-        phys_comp = COMPOUNDS_PHYSICS.get(comp, {'max_life': 40})
-        track_abr = CIRCUITOS_CONFIG.get(track_name, {'abrasion': 1.0})['abrasion']
-        m_life_ef = phys_comp['max_life'] * (1.0 / track_abr)
-        l_sector = [max(0, 100 * (1 - (v / m_life_ef)**3)) for v in range(1, duracion + 1)]
-        piecewise_life.extend(l_sector)
+        piecewise_life.extend(l_sector.tolist())
     return {
         'resultado_opt': resultado_opt, 'vueltas_parada': vueltas_parada,
         'tiempos_race': tiempos_race, 'comp_trace': comp_trace,
@@ -227,7 +223,7 @@ def render_live_timing_view():
                       legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
     fig1.update_yaxes(title_text="Lap Time (s)")
     fig1.update_xaxes(title_text="Vuelta")
-    st.plotly_chart(fig1, use_container_width=True, key="f_ritmo")
+    st.plotly_chart(fig1, width="stretch", key="f_ritmo")
 
     # Fila 2: Evolución Térmica y Desgaste Mecánico (50/50)
     col1, col2 = st.columns(2)
@@ -248,16 +244,22 @@ def render_live_timing_view():
             s_l = p_lap + 1
         fig_termica.update_layout(template="plotly_dark", paper_bgcolor='#0b0f19', plot_bgcolor='#0b0f19', 
                                   height=300, margin=dict(l=20, r=20, t=20, b=20))
-        st.plotly_chart(fig_termica, use_container_width=True, key="f_temp_live")
+        st.plotly_chart(fig_termica, width="stretch", key="f_temp_live")
 
     with col2:
         st.subheader("Desgaste Mecánico (%)")
-        # Asegúrate de que piecewise_life tenga datos antes de graficar
         if len(piecewise_life) > 0:
             fig_desgaste = go.Figure()
 
+            # Líneas de PIT STOP
             for p_lap in vueltas_parada:
                 fig_desgaste.add_vline(x=p_lap, line_width=1, line_dash="dash", line_color="#ff4b4b", opacity=0.4)
+
+            # LÍMITE DE SEGURIDAD ESTRUCTURAL (70%)
+            # Mostramos una franja roja para indicar peligro por debajo del 30% de vida restante
+            fig_desgaste.add_hrect(y0=0, y1=30, fillcolor="#ff4b4b", opacity=0.15, layer="below", line_width=0)
+            fig_desgaste.add_annotation(x=total_race_laps/2, y=15, text="ZONA DE RIESGO ESTRUCTURAL", 
+                                       showarrow=False, font=dict(color="#ff4b4b", size=10), opacity=0.8)
 
             s_l = 1
             for i, p_lap in enumerate(vueltas_parada + [total_race_laps]):
@@ -266,7 +268,7 @@ def render_live_timing_view():
                 fig_desgaste.add_trace(go.Scatter(
                     x=l, y=v, 
                     name=f"Stint {i+1}", 
-                    line=dict(color=col_map.get(lista_compuestos[i]), width=3, dash='dash')
+                    line=dict(color=col_map.get(lista_compuestos[i]), width=3)
                 ))
                 s_l = p_lap + 1
                 
@@ -276,11 +278,11 @@ def render_live_timing_view():
                 plot_bgcolor='#0b0f19', 
                 height=300, 
                 margin=dict(l=20, r=20, t=20, b=20),
-                showlegend=False # Quitar leyenda ayuda a la velocidad de renderizado
+                showlegend=False
             )
-            fig_desgaste.update_yaxes(range=[0, 105])
+            fig_desgaste.update_yaxes(range=[0, 105], title_text="Vida útil %")
+            fig_desgaste.update_xaxes(title_text="Vuelta")
             
-            # USA UNA KEY ESTÁTICA Y ÚNICA
-            st.plotly_chart(fig_desgaste, use_container_width=True, key="grafico_desgaste_fijo")
+            st.plotly_chart(fig_desgaste, width="stretch", key="grafico_desgaste_fijo")
 
 render_live_timing_view()

@@ -54,7 +54,7 @@ class PredictorDegradacion:
         track_abrasion = CIRCUITOS_CONFIG.get(track_name, {'abrasion': 1.0})['abrasion']
         m_life_efectiva = m_life_base * (1.0 / track_abrasion)
         
-        # 2. MULTIPLICADORES DE DEGRADACIÓN
+        # MULTIPLICADORES DE DEGRADACIÓN
         deg_multipliers = {'SOFT': 1.8, 'MEDIUM': 1.0, 'HARD': 0.4}
         mult = deg_multipliers.get(compound_name, 1.0)
         
