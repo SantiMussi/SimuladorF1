@@ -70,7 +70,6 @@ class EngineEstrategia:
         Busca las vueltas de parada óptimas para una secuencia de compuestos dada (1 o 2 paradas).
         Implementa un Límite de Seguridad Estructural estricto: ninguna goma puede superar el 70% de su vida efectiva.
         """
-        # --- CÁLCULO DE LÍMITES DE SEGURIDAD ESTRUCTURAL ---
         # Basado en la abrasión del circuito y la vida teórica del compuesto
         abrasion = CIRCUITOS_CONFIG[self.track_name]['abrasion']
         limite_vueltas_seguras = {}
