@@ -247,7 +247,7 @@ def render_live_timing_view():
         st.plotly_chart(fig_termica, width="stretch", key="f_temp_live")
 
     with col2:
-        st.subheader("Desgaste Mecánico (%)")
+        st.subheader("Vida útil (%)")
         if len(piecewise_life) > 0:
             fig_desgaste = go.Figure()
 
