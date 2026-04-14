@@ -32,7 +32,10 @@ def aplicar_estilos():
         html, body, [class*="css"] { 
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
         }
-        #MainMenu {visibility: hidden;} header {visibility: hidden;} footer {visibility: hidden;}
+        #MainMenu {visibility: hidden;} 
+        footer {visibility: hidden;}
+        header {background-color: transparent !important; border-bottom: none !important;}
+        [data-testid="stHeader"] { background: rgba(0,0,0,0); }
         div[data-testid="metric-container"] {
             background-color: #151a28; border: 1px solid #1e253c; padding: 15px 20px; border-radius: 12px;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
