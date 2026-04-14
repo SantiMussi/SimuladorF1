@@ -16,6 +16,7 @@ COMPOUNDS_PHYSICS = {
 }
 
 CIRCUITOS_CONFIG = {
+    'Monaco': {'abrasion': 0.5, 'speed_factor': 0.7, 'base_lap_time': 75.0, 'event_name': 'Monaco', 'total_laps': 78, 'pit_loss': 20.0},
     'Hungría': {'abrasion': 0.65, 'speed_factor': 0.9, 'base_lap_time': 80.0, 'event_name': 'Hungary', 'total_laps': 70},
     'Silverstone': {'abrasion': 1.25, 'speed_factor': 1.4, 'base_lap_time': 90.0, 'event_name': 'Great Britain', 'total_laps': 52},
     'Spa': {'abrasion': 1.25, 'speed_factor': 1.5, 'base_lap_time': 105.0, 'event_name': 'Belgium', 'total_laps': 44},
