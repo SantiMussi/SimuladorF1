@@ -104,8 +104,17 @@ class EngineEstrategia:
                 if stint1_len > limite_vueltas_seguras[compounds[0]] or stint2_len > limite_vueltas_seguras[compounds[1]]:
                     continue
 
-                t_stint1 = np.sum(perfiles[compounds[0]][:stint1_len])
-                t_stint2 = np.sum(perfiles[compounds[1]][:stint2_len])
+                # Calcular beneficio de combustible acumulado para cada stint
+                # Stint 1: de vuelta 1 a p1
+                # Stint 2: de vuelta p1+1 a total_race_laps
+                
+                # Usamos una aproximación del beneficio promedio por vuelta para el tiempo total
+                # Beneficio = 0.04 * vuelta_absoluta
+                beneficio_fuel_s1 = np.sum(np.arange(1, stint1_len + 1)) * 0.04
+                beneficio_fuel_s2 = np.sum(np.arange(p1 + 1, total_race_laps + 1)) * 0.04
+
+                t_stint1 = np.sum(perfiles[compounds[0]][:stint1_len]) - beneficio_fuel_s1
+                t_stint2 = np.sum(perfiles[compounds[1]][:stint2_len]) - beneficio_fuel_s2
                 
                 tiempo_total = t_stint1 + self.pit_loss + t_stint2
                 
@@ -129,8 +138,13 @@ class EngineEstrategia:
                     if stint2_len > limite_vueltas_seguras[compounds[1]] or stint3_len > limite_vueltas_seguras[compounds[2]]:
                         continue
 
-                    t_stint2 = np.sum(perfiles[compounds[1]][:stint2_len])
-                    t_stint3 = np.sum(perfiles[compounds[2]][:stint3_len])
+                    beneficio_fuel_s1 = np.sum(np.arange(1, p1 + 1)) * 0.04
+                    beneficio_fuel_s2 = np.sum(np.arange(p1 + 1, p2 + 1)) * 0.04
+                    beneficio_fuel_s3 = np.sum(np.arange(p2 + 1, total_race_laps + 1)) * 0.04
+
+                    t_stint1 = np.sum(perfiles[compounds[0]][:p1]) - beneficio_fuel_s1
+                    t_stint2 = np.sum(perfiles[compounds[1]][:stint2_len]) - beneficio_fuel_s2
+                    t_stint3 = np.sum(perfiles[compounds[2]][:stint3_len]) - beneficio_fuel_s3
                     
                     tiempo_total = t_stint1 + self.pit_loss + t_stint2 + self.pit_loss + t_stint3
                     
@@ -151,11 +165,18 @@ class EngineEstrategia:
         race_trace = []
         compounds_trace = []
         periodos = vueltas_optimas + [total_race_laps]
+        current_absolute_lap = 1
         for i, fin_lap in enumerate(periodos):
             comp = compounds[i]
             duracion = fin_lap - (periodos[i-1] if i > 0 else 0)
-            segmento = perfiles[comp][:duracion]
-            race_trace.extend(segmento.tolist())
+            segmento_base = perfiles[comp][:duracion]
+            
+            # Aplicar efecto de combustible vuelta a vuelta
+            for v_stint in range(duracion):
+                t_final = segmento_base[v_stint] - (current_absolute_lap * 0.04)
+                race_trace.append(t_final)
+                current_absolute_lap += 1
+                
             compounds_trace.extend([comp] * duracion)
             
         return {
