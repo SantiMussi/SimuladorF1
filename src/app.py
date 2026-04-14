@@ -29,7 +29,9 @@ def aplicar_estilos():
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         .stApp { background-color: #0b0f19; color: #e2e8f0; }
-        html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+        html, body, [class*="css"] { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+        }
         #MainMenu {visibility: hidden;} header {visibility: hidden;} footer {visibility: hidden;}
         div[data-testid="metric-container"] {
             background-color: #151a28; border: 1px solid #1e253c; padding: 15px 20px; border-radius: 12px;

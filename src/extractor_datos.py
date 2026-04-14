@@ -1,6 +1,13 @@
 import fastf1
 import pandas as pd
 import numpy as np
+import os
+
+# Configuración de Cache para funcionamiento offline
+cache_dir = os.path.join(os.path.dirname(__file__), '..', 'f1_cache')
+if not os.path.exists(cache_dir):
+    os.makedirs(cache_dir)
+fastf1.Cache.enable_cache(cache_dir)
 
 COMPOUNDS_PHYSICS = {
     'SOFT': {'friccion_base': 11.5, 'k_disipacion': 0.20, 'desgaste_base': 0.045, 'ventana_temp': (95, 105), 'max_life': 25},
