@@ -24,15 +24,16 @@ class EngineEstrategia:
             
         return t_pred + overheat_penalty
 
-    def edo_temperatura(self, t, T_neumatico, T_pista_base):
-        """
-        EDO Térmica Dinámica: Calibrada para RK45.
-        """
+    # En strategy.py, modifica edo_temperatura para aceptar el desgaste actual
+    def edo_temperatura(self, t, T_neumatico, T_pista_base, lap_progress):
         phys = COMPOUNDS_PHYSICS.get(self.compound, {'friccion_base': 10.0, 'k_disipacion': 0.12})
         track_config = get_track_severity(self.track_name)
         
-        # Fricción escala con la severidad de la pista
-        friccion_real = phys['friccion_base'] * track_config['speed_factor']
+        # EFECTO MASA: A menos goma, más temperatura (efecto térmico de la delgadez del caucho)
+        # lap_progress es un valor de 0 a 1 (vuelta_actual / max_life)
+        thermal_mass_factor = 1.0 + (lap_progress * 0.5) # Aumenta la fricción efectiva un 50% al final
+        
+        friccion_real = phys['friccion_base'] * track_config['speed_factor'] * thermal_mass_factor
         k = phys['k_disipacion']
         
         return friccion_real - k * (T_neumatico - T_pista_base)
@@ -49,10 +50,10 @@ class EngineEstrategia:
         h = 0.2
         
         for lap in range(1, max_laps + 1):
-            tiempo_sim = 0
+            lap_progress = lap / max_laps # O usa la vida efectiva real
             while tiempo_sim < 1.0:
                 T_actual, tiempo_sim, h, success = rk45_step(
-                    lambda t, y: self.edo_temperatura(t, y, T_pista),
+                    lambda t, y: self.edo_temperatura(t, y, T_pista, lap_progress),
                     tiempo_sim, T_actual, h
                 )
             
