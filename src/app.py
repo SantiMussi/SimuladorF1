@@ -56,32 +56,155 @@ def aplicar_estilos():
         f"""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;800&display=swap');
-        .stApp {{ background-color: #15151e; color: #ffffff; {bg_css} }}
+        
+        /* Global App Styles */
+        .stApp {{ 
+            background-color: #0b0b0f; 
+            color: #ffffff; 
+            {bg_css} 
+        }}
+        
         html, body, [class*="css"] {{ 
             font-family: 'Titillium Web', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
         }}
+
+        /* Hide Streamlit elements */
         #MainMenu {{visibility: hidden;}} 
         footer {{visibility: hidden;}}
         header {{background-color: transparent !important; border-bottom: none !important;}}
         [data-testid="stHeader"] {{ background: rgba(0,0,0,0); }}
+
+        /* Sidebar Styling - F1 Pit Wall Look */
+        [data-testid="stSidebar"] {{
+            background: linear-gradient(180deg, #0f0f14 0%, #15151e 100%) !important;
+            border-right: 2px solid #e10600 !important;
+            box-shadow: 5px 0 25px rgba(0,0,0,0.5);
+        }}
+        
+        [data-testid="stSidebarUserContent"] {{
+            padding-top: 1rem;
+        }}
+
+        /* Sidebar Headers */
+        [data-testid="stSidebar"] h1, 
+        [data-testid="stSidebar"] h2, 
+        [data-testid="stSidebar"] h3,
+        [data-testid="stSidebar"] .st-emotion-cache-10lo6u4 {{
+            color: #e10600 !important;
+            font-family: 'Titillium Web', sans-serif !important;
+            font-weight: 800 !important;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            border-left: 4px solid #e10600;
+            padding-left: 12px;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }}
+
+        /* Sidebar Labels */
+        [data-testid="stSidebar"] label {{
+            color: #a1a1aa !important;
+            font-weight: 700 !important;
+            font-size: 0.8rem !important;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 4px;
+        }}
+
+        /* Sidebar Widgets */
+        [data-testid="stSidebar"] div[data-baseweb="select"],
+        [data-testid="stSidebar"] div[data-baseweb="input"] {{
+            background-color: #1a1a24 !important;
+            border: 1px solid #33333e !important;
+            border-radius: 4px !important;
+        }}
+        
+        [data-testid="stSidebar"] .stSlider {{
+            padding-bottom: 15px;
+        }}
+
+        /* Sidebar Expanders */
+        [data-testid="stSidebar"] .stExpander {{
+            background-color: rgba(26, 26, 36, 0.6) !important;
+            border: 1px solid #33333e !important;
+            border-radius: 6px !important;
+            margin-bottom: 10px;
+        }}
+        
+        [data-testid="stSidebar"] .stExpander summary {{
+            color: #ffffff !important;
+            font-weight: 700 !important;
+        }}
+
+        /* Radio buttons in sidebar */
+        [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {{
+            font-size: 0.85rem;
+        }}
+
+        /* Metrics */
         div[data-testid="metric-container"] {{
-            background-color: rgba(21, 21, 30, 0.8); border: 1px solid #e10600; padding: 15px 20px; border-radius: 8px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 6px -1px rgba(225, 6, 0, 0.2);
-            backdrop-filter: blur(5px);
-        }}
-        div[data-testid="metric-container"]:hover {{ transform: translateY(-2px); border-color: #ff1801; box-shadow: 0 6px 12px -2px rgba(225, 6, 0, 0.4); }}
-        div[data-testid="stMetricLabel"] {{ color: #a1a1aa !important; font-size: 0.9rem !important; font-weight: 600 !important; text-transform: uppercase; letter-spacing: 1px; }}
-        div[data-testid="stMetricValue"] {{ color: #ffffff !important; font-weight: 700 !important; }}
-        [data-testid="stSidebar"] {{ background-color: rgba(21, 21, 30, 0.95); border-right: 2px solid #e10600; backdrop-filter: blur(10px); }}
-        .card-box {{
-            background: rgba(21, 21, 30, 0.8);
-            border: 1px solid #3f3f46;
+            background-color: rgba(21, 21, 30, 0.85); 
+            border: 1px solid #e10600; 
+            padding: 15px 20px; 
             border-radius: 8px;
-            padding: 14px 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            box-shadow: 0 4px 6px -1px rgba(225, 6, 0, 0.2);
+            backdrop-filter: blur(8px);
         }}
+        div[data-testid="metric-container"]:hover {{ 
+            transform: translateY(-2px); 
+            border-color: #ff1801; 
+            box-shadow: 0 8px 15px -3px rgba(225, 6, 0, 0.4); 
+        }}
+        div[data-testid="stMetricLabel"] {{ 
+            color: #a1a1aa !important; 
+            font-size: 0.85rem !important; 
+            font-weight: 600 !important; 
+            text-transform: uppercase; 
+            letter-spacing: 1.2px; 
+        }}
+        div[data-testid="stMetricValue"] {{ 
+            color: #ffffff !important; 
+            font-weight: 800 !important; 
+        }}
+
+        /* Cards and general boxes */
+        .card-box {{
+            background: rgba(25, 25, 35, 0.8);
+            border: 1px solid #33333e;
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }}
+        
         .small-muted {{
             color: #a1a1aa;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+        }}
+
+        /* Custom buttons */
+        .stButton button {{
+            background-color: #e10600 !important;
+            color: white !important;
+            font-weight: 700 !important;
+            border: none !important;
+            padding: 0.5rem 1rem !important;
+            border-radius: 4px !important;
+            text-transform: uppercase !important;
+            letter-spacing: 1px !important;
+            transition: all 0.2s !important;
+        }}
+        
+        .stButton button:hover {{
+            background-color: #ff1801 !important;
+            box-shadow: 0 0 15px rgba(225, 6, 0, 0.4) !important;
+            transform: translateY(-1px) !important;
+        }}
+
+        /* Divider */
+        hr {{
+            border-top: 1px solid #33333e !important;
+            margin: 1.5rem 0 !important;
         }}
         </style>
     """,
@@ -493,6 +616,16 @@ st.markdown(
 # =========================
 # Sidebar
 # =========================
+if logo_uri:
+    st.sidebar.markdown(
+        f"""
+        <div style='text-align: center; padding: 10px 0 20px 0;'>
+            <img src='{logo_uri}' width='120' style='filter: drop-shadow(0 0 5px rgba(225, 6, 0, 0.2));'/>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
 st.sidebar.header("Race Strategy")
 
 track_name = st.sidebar.selectbox("Circuito", list(CIRCUITOS_CONFIG.keys()))
