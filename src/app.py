@@ -144,7 +144,7 @@ TEAM_DRIVERS = {
     "McLaren": ["Lando Norris", "Oscar Piastri"],
     "Mercedes": ["George Russell", "Kimi Antonelli"],
     "Aston Martin": ["Fernando Alonso", "Lance Stroll"],
-    "Alpine": ["Pierre Gasly", "Jack Doohan"],
+    "Alpine": ["Pierre Gasly", "Franco Colapinto"],
     "Williams": ["Alex Albon", "Carlos Sainz"],
     "Haas": ["Esteban Ocon", "Oliver Bearman"],
     "RB": ["Isack Hadjar", "Liam Lawson"],
