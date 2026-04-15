@@ -219,10 +219,51 @@ def aplicar_estilos():
         else ""
     )
 
-    style = """
-        <style>
+    # Lógica de fuentes locales para uso 100% offline
+    fonts_css = ""
+    local_fonts_dir = asset_path("assets", "fonts")
+    font_files = {
+        "Titillium Web": {
+            400: "titillium_400.ttf",
+            600: "titillium_600.ttf",
+            700: "titillium_700.ttf",
+        },
+        "Inter": {
+            400: "inter_400.ttf",
+            500: "inter_500.ttf",
+            600: "inter_600.ttf",
+            700: "inter_700.ttf",
+        }
+    }
+
+    fonts_found = False
+    for family, weights in font_files.items():
+        for weight, filename in weights.items():
+            f_path = local_fonts_dir / filename
+            if f_path.exists():
+                fonts_found = True
+                uri = image_to_data_uri(f_path)
+                if uri:
+                    fonts_css += f"""
+                    @font-face {{
+                        font-family: '{family}';
+                        font-style: normal;
+                        font-weight: {weight};
+                        font-display: swap;
+                        src: url({uri}) format('truetype');
+                    }}
+                    """
+
+    # Si no hay fuentes locales, usamos el CDN de Google como fallback
+    if not fonts_found:
+        fonts_css = """
         @import url('https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;800&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        """
+
+    style = f"""
+        <style>
+        {fonts_css}
 
         .stApp {
             background-color: #0b0b0f;
