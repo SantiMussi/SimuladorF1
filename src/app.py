@@ -66,15 +66,19 @@ def _safe_name(name: str) -> str:
     )
 
 
+@st.cache_data(show_spinner=False)
 def image_to_data_uri(path):
     """Convierte una imagen local a data URI para usarla en Plotly o HTML."""
     if not path or not os.path.exists(path):
         return None
     mime_type, _ = mimetypes.guess_type(path)
     mime_type = mime_type or "image/png"
-    with open(path, "rb") as f:
-        encoded = base64.b64encode(f.read()).decode("ascii")
-    return f"data:{mime_type};base64,{encoded}"
+    try:
+        with open(path, "rb") as f:
+            encoded = base64.b64encode(f.read()).decode("ascii")
+        return f"data:{mime_type};base64,{encoded}"
+    except Exception:
+        return None
 
 
 def image_or_placeholder(path, title, subtitle=""):
@@ -775,6 +779,7 @@ def _build_path_from_corners(corners, n=520):
     return _smooth_closed_path(pts, n=n)
 
 
+@st.cache_data(show_spinner=False)
 def obtener_track_geometry(track_name, year=2023, session_type="R"):
     """
     Devuelve geometría visual para el trazado de pista.
@@ -997,14 +1002,8 @@ def build_track_figure(track_name, track_geom, strategy_states):
                 )
             )
 
-        fig.add_annotation(
-            x=x_car,
-            y=y_car,
-            text=st_data["short_label"],
-            showarrow=False,
-            yshift=18,
-            font=dict(color=st_data["color"], size=11, family="Inter"),
-        )
+        # Anotación quitada para reducir ruido visual y parpadeo de layout
+        # fig.add_annotation(...) 
 
     fig.add_annotation(
         x=x_path[0],
@@ -1480,7 +1479,7 @@ def render_live_timing_view():
     if st.session_state.playing:
         st.session_state.sim_clock = min(
             reference_total_time,
-            st.session_state.sim_clock + dt * animation_speed,
+            st.session_state.sim_clock + (dt * animation_speed),
         )
     else:
         # Sincronización precisa al mover el slider manual
@@ -1588,6 +1587,9 @@ def render_live_timing_view():
         track_geom=track_geom,
         strategy_states=strategy_states,
     )
+    
+    # Pre-render logic for icons (caching is key)
+    # The figure construction is now faster thanks to cached data URIs.
     st.plotly_chart(
         track_fig, 
         use_container_width=True, 
