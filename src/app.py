@@ -200,7 +200,6 @@ def academic_method_card(title: str, short_desc: str, detail_key: str, icon: str
     with st.expander(f"{icon} {title}", expanded=False):
         st.markdown(f"<div class='small-muted'>{short_desc}</div>", unsafe_allow_html=True)
         st.markdown(load_text_asset(detail_key))
-        st.caption("Podés reemplazar este texto por un archivo .md en academic_texts/ si querés editarlo sin tocar el código.")
 
 
 # =========================
@@ -392,6 +391,16 @@ def aplicar_estilos():
             font-size: 0.78rem;
             font-weight: 700;
             letter-spacing: 0.4px;
+        }
+
+        /* Reducción de parpadeo en gráficos */
+        [data-testid="stPlotlyChart"] {
+            background-color: #0b0b0f !important;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        iframe[title="streamlit_plotly_events.plotly_chart"] {
+            background-color: #0b0b0f !important;
         }
         </style>
     """
@@ -868,7 +877,7 @@ def get_lap_state(cumulative_times, sim_clock, total_laps):
     lap_fraction = float(np.clip((sim_clock - prev_time) / denom, 0.0, 1.0))
 
     current_lap_float = float(lap_idx + 1 + lap_fraction)
-    progress_race = current_lap_float / float(total_laps)
+    progress_race = (current_lap_float - 1.0) / float(total_laps)
     progress_race = float(np.clip(progress_race, 0.0, 1.0))
 
     return current_lap_float, lap_idx, lap_fraction, progress_race
@@ -879,8 +888,11 @@ def elapsed_at_race_fraction(cumulative_times, total_laps, fraction_0_1):
         return 0.0
     fraction_0_1 = float(np.clip(fraction_0_1, 0.0, 1.0))
     target_lap = fraction_0_1 * float(total_laps)
-    laps = np.arange(1, len(cumulative_times) + 1)
-    return float(np.interp(target_lap, laps, cumulative_times))
+    
+    # Incluimos el inicio de carrera (0, 0) para interpolación correcta
+    laps = np.arange(0, len(cumulative_times) + 1)
+    times = np.concatenate([[0.0], cumulative_times])
+    return float(np.interp(target_lap, laps, times))
 
 
 def build_track_figure(track_name, track_geom, strategy_states):
@@ -1007,8 +1019,8 @@ def build_track_figure(track_name, track_geom, strategy_states):
 
     fig.update_layout(
         template="plotly_dark",
-        paper_bgcolor="#0b0f19",
-        plot_bgcolor="#0b0f19",
+        paper_bgcolor="#0b0b0f",
+        plot_bgcolor="#0b0b0f",
         height=540,
         margin=dict(l=20, r=20, t=30, b=20),
         showlegend=True,
@@ -1042,8 +1054,8 @@ def build_comparison_gap_figure(result_a, result_b):
     fig.add_hline(y=0, line_width=1, line_dash="dash", line_color="#94a3b8")
     fig.update_layout(
         template="plotly_dark",
-        paper_bgcolor="#0b0f19",
-        plot_bgcolor="#0b0f19",
+        paper_bgcolor="#0b0b0f",
+        plot_bgcolor="#0b0b0f",
         height=260,
         margin=dict(l=20, r=20, t=20, b=20),
         showlegend=False,
@@ -1292,6 +1304,13 @@ lap_slider_value = st.sidebar.slider(
     value=float(st.session_state.vuelta_actual),
     step=0.1,
 )
+
+sim_speed_factor = st.sidebar.select_slider(
+    "Velocidad de Simulación",
+    options=[1, 2, 5, 10, 20, 50, 100],
+    value=20,
+    help="Multiplicador de velocidad respecto al tiempo real."
+)
 if not st.session_state.playing:
     st.session_state.vuelta_actual = lap_slider_value
 
@@ -1371,8 +1390,8 @@ reference_total_time = max(finite_totals) if finite_totals else 1.0
 if reference_total_time <= 0:
     reference_total_time = 1.0
 
-animation_speed = reference_total_time / 120.0 if reference_total_time > 0 else 1.0
-animation_speed = max(1.0, animation_speed)
+# Velocidad controlada por el usuario en lugar de divisor fijo
+animation_speed = float(sim_speed_factor)
 
 
 # =========================
@@ -1386,7 +1405,6 @@ if st.session_state.show_academic_panel:
         """
     )
 
-    st.tabs(["Visión general", "Métodos numéricos", "Machine Learning", "Validación"])
     tab1, tab2, tab3, tab4 = st.tabs(["Visión general", "Métodos numéricos", "Machine Learning", "Validación"])
 
     with tab1:
@@ -1453,7 +1471,7 @@ if st.session_state.show_academic_panel:
 # =========================
 # Vista dinámica
 # =========================
-@st.fragment(run_every="250ms")
+@st.fragment(run_every="500ms")
 def render_live_timing_view():
     now = time.time()
     dt = now - st.session_state.last_tick
@@ -1464,17 +1482,16 @@ def render_live_timing_view():
             reference_total_time,
             st.session_state.sim_clock + dt * animation_speed,
         )
-        st.session_state.vuelta_actual = max(
-            1.0,
-            min(
-                float(total_race_laps),
-                (st.session_state.sim_clock / reference_total_time) * float(total_race_laps),
-            ),
-        )
     else:
-        st.session_state.sim_clock = (
-            float(st.session_state.vuelta_actual) / float(total_race_laps)
-        ) * reference_total_time
+        # Sincronización precisa al mover el slider manual
+        # 'Vuelta Actual 1.0' debe mapear a la meta al inicio (target_lap 0.0)
+        target_v = max(1.0, float(st.session_state.vuelta_actual))
+        fraction = (target_v - 1.0) / float(total_race_laps)
+        st.session_state.sim_clock = elapsed_at_race_fraction(
+            strategy_results[0]["cumulative_times"],
+            int(total_race_laps),
+            fraction
+        )
 
     st.divider()
 
@@ -1525,7 +1542,7 @@ def render_live_timing_view():
                 "color": color_palette[i % len(color_palette)],
                 "symbol": symbol_palette[i % len(symbol_palette)],
                 "dash": "solid" if i == 0 else "dash",
-                "display_progress": progress_race,
+                "display_progress": lap_fraction, # Usar progreso de vuelta real
                 "gap_text": "N/A",
                 "progress_text": f"{progress_race * 100:.1f}%",
                 "icon_path": r.get("team_image"),
@@ -1538,13 +1555,13 @@ def render_live_timing_view():
         for i, state in enumerate(strategy_states):
             other_elapsed = strategy_states[1 - i]["common_elapsed"]
             gap_vs_other = state["common_elapsed"] - other_elapsed
-
-            avg_lap = max(strategy_results[i]["total_time"] / max(int(total_race_laps), 1), 1e-9)
-            visual_offset = np.clip((-gap_vs_other / avg_lap) * 0.35, -0.16, 0.16)
-
-            state["display_progress"] = float(np.clip(state["progress_race"] + visual_offset, 0.0, 1.0))
+            
+            # Eliminamos el visual_offset artificial para que la posición sea físicamente real
             state["gap_text"] = format_gap(gap_vs_other)
-            state["progress_text"] = f"{state['display_progress'] * 100:.1f}%"
+
+        # Actualizar la vuelta de referencia si estamos en reproducción
+        if st.session_state.playing:
+            st.session_state.vuelta_actual = strategy_states[0]["current_lap_float"]
 
         leader_idx = 0 if gap_common < 0 else 1 if gap_common > 0 else 0
         st.info(
@@ -1571,7 +1588,13 @@ def render_live_timing_view():
         track_geom=track_geom,
         strategy_states=strategy_states,
     )
-    st.plotly_chart(track_fig, use_container_width=True, key="track_map")
+    st.plotly_chart(
+        track_fig, 
+        use_container_width=True, 
+        key="track_map",
+        theme=None,
+        config={'displayModeBar': False, 'responsive': False}
+    )
 
     with st.expander("Explicación del gráfico del circuito", expanded=False):
         st.markdown(load_text_asset("global"))
@@ -1611,12 +1634,15 @@ def render_live_timing_view():
         with m4:
             st.metric("Vida Restante", f"{r['piecewise_life'][idx]:.1f}%")
 
-        prog = v_act / float(total_race_laps)
-        st.progress(min(1.0, prog))
-        st.markdown(
-            f"<p style='text-align: center; color: #00d4ff; font-weight: bold;'>Progreso: Vuelta {v_act:.1f} / {total_race_laps} ({prog*100:.1f}%)</p>",
-            unsafe_allow_html=True,
-        )
+        c_lap, c_race = st.columns(2)
+        with c_lap:
+            l_prog = strategy_states[0]["lap_fraction"]
+            st.progress(min(1.0, l_prog))
+            st.markdown(f"<p style='text-align:center; color:#e10600; font-size:0.8rem; font-weight:700; margin-top:-10px;'>PROGRESO DE VUELTA: {l_prog*100:.1f}%</p>", unsafe_allow_html=True)
+        with c_race:
+            r_prog = v_act / float(total_race_laps)
+            st.progress(min(1.0, r_prog))
+            st.markdown(f"<p style='text-align:center; color:#00d4ff; font-size:0.8rem; font-weight:700; margin-top:-10px;'>PROGRESO DE CARRERA: {r_prog*100:.1f}%</p>", unsafe_allow_html=True)
     else:
         col_a, col_b = st.columns(2)
 
@@ -1775,8 +1801,8 @@ def render_live_timing_view():
 
     fig1.update_layout(
         template="plotly_dark",
-        paper_bgcolor="#0b0f19",
-        plot_bgcolor="#0b0f19",
+        paper_bgcolor="#0b0b0f",
+        plot_bgcolor="#0b0b0f",
         height=420,
         margin=dict(l=20, r=20, t=20, b=20),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
@@ -1785,7 +1811,13 @@ def render_live_timing_view():
     )
     fig1.update_yaxes(title_text="Lap Time (s)")
     fig1.update_xaxes(title_text="Vuelta")
-    st.plotly_chart(fig1, use_container_width=True, key="f_ritmo")
+    st.plotly_chart(
+        fig1, 
+        use_container_width=True, 
+        key="f_ritmo",
+        theme=None,
+        config={'displayModeBar': False, 'responsive': False}
+    )
 
     with st.expander("Explicación académica del gráfico de ritmo", expanded=False):
         st.markdown(load_text_asset("least_squares"))
@@ -1858,14 +1890,20 @@ def render_live_timing_view():
 
         fig_termica.update_layout(
             template="plotly_dark",
-            paper_bgcolor="#0b0f19",
-            plot_bgcolor="#0b0f19",
+            paper_bgcolor="#0b0b0f",
+            plot_bgcolor="#0b0b0f",
             height=320,
             margin=dict(l=20, r=20, t=20, b=20),
             uirevision="temp_live",
             transition={"duration": 0},
         )
-        st.plotly_chart(fig_termica, use_container_width=True, key="f_temp_live")
+        st.plotly_chart(
+            fig_termica, 
+            use_container_width=True, 
+            key="f_temp_live",
+            theme=None,
+            config={'displayModeBar': False}
+        )
 
         with st.popover("Ver explicación de la EDO térmica"):
             st.markdown(load_text_asset("rk45"))
@@ -1947,8 +1985,8 @@ def render_live_timing_view():
 
         fig_desgaste.update_layout(
             template="plotly_dark",
-            paper_bgcolor="#0b0f19",
-            plot_bgcolor="#0b0f19",
+            paper_bgcolor="#0b0b0f",
+            plot_bgcolor="#0b0b0f",
             height=320,
             margin=dict(l=20, r=20, t=20, b=20),
             showlegend=False,
@@ -1957,7 +1995,13 @@ def render_live_timing_view():
         )
         fig_desgaste.update_yaxes(range=[0, 105], title_text="Vida útil %")
         fig_desgaste.update_xaxes(title_text="Vuelta")
-        st.plotly_chart(fig_desgaste, use_container_width=True, key="grafico_desgaste_fijo")
+        st.plotly_chart(
+            fig_desgaste, 
+            use_container_width=True, 
+            key="grafico_desgaste_fijo",
+            theme=None,
+            config={'displayModeBar': False}
+        )
 
         with st.popover("Ver explicación del desgaste y Simpson"):
             st.markdown(load_text_asset("simpson"))
@@ -1968,9 +2012,6 @@ def render_live_timing_view():
     st.divider()
 
     st.subheader("Bloque de lectura técnica rápida")
-    st.write(
-        "Estos bloques te sirven para la defensa oral y para reforzar la justificación académica del trabajo. Cada uno conecta un método numérico con su función dentro del simulador."
-    )
     c1, c2 = st.columns(2)
     with c1:
         academic_method_card(
