@@ -460,15 +460,16 @@ def aplicar_estilos():
 # =========================
 TEAM_DRIVERS = {
     "Ferrari": ["Charles Leclerc", "Lewis Hamilton"],
-    "Red Bull": ["Max Verstappen", "Yuki Tsunoda"],
+    "Red Bull": ["Max Verstappen", "Isack Hadjar"],
     "McLaren": ["Lando Norris", "Oscar Piastri"],
     "Mercedes": ["George Russell", "Kimi Antonelli"],
     "Aston Martin": ["Fernando Alonso", "Lance Stroll"],
     "Alpine": ["Pierre Gasly", "Franco Colapinto"],
     "Williams": ["Alex Albon", "Carlos Sainz"],
     "Haas": ["Esteban Ocon", "Oliver Bearman"],
-    "RB": ["Isack Hadjar", "Liam Lawson"],
-    "Sauber": ["Nico Hülkenberg", "Gabriel Bortoleto"],
+    "RB": ["Liam Lawson", "Arvid Lindblad"],
+    "Audi": ["Nico Hülkenberg", "Gabriel Bortoleto"],
+    "Cadillac": ["Sergio Pérez", "Valtteri Bottas"],
 }
 
 DEFAULT_TEAM_IMAGE = asset_path("assets", "teams", "placeholder_team.png")
