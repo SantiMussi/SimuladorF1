@@ -47,171 +47,6 @@ def format_gap(delta_seconds):
     return f"{sign}{abs(delta_seconds):.3f}s"
 
 
-def aplicar_estilos():
-    bg_path = asset_path("assets", "f1_bg.png")
-    bg_uri = image_to_data_uri(bg_path) if os.path.exists(bg_path) else ""
-    bg_css = f"background-image: url('{bg_uri}'); background-size: cover; background-position: center; background-attachment: fixed; background-blend-mode: overlay;" if bg_uri else ""
-    
-    st.markdown(
-        f"""
-        <style>
-        @import url('https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;800&display=swap');
-        
-        /* Global App Styles */
-        .stApp {{ 
-            background-color: #0b0b0f; 
-            color: #ffffff; 
-            {bg_css} 
-        }}
-        
-        html, body, [class*="css"] {{ 
-            font-family: 'Titillium Web', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-        }}
-
-        /* Hide Streamlit elements */
-        #MainMenu {{visibility: hidden;}} 
-        footer {{visibility: hidden;}}
-        header {{background-color: transparent !important; border-bottom: none !important;}}
-        [data-testid="stHeader"] {{ background: rgba(0,0,0,0); }}
-
-        /* Sidebar Styling - F1 Pit Wall Look */
-        [data-testid="stSidebar"] {{
-            background: linear-gradient(180deg, #0f0f14 0%, #15151e 100%) !important;
-            border-right: 2px solid #e10600 !important;
-            box-shadow: 5px 0 25px rgba(0,0,0,0.5);
-        }}
-        
-        [data-testid="stSidebarUserContent"] {{
-            padding-top: 1rem;
-        }}
-
-        /* Sidebar Headers */
-        [data-testid="stSidebar"] h1, 
-        [data-testid="stSidebar"] h2, 
-        [data-testid="stSidebar"] h3,
-        [data-testid="stSidebar"] .st-emotion-cache-10lo6u4 {{
-            color: #e10600 !important;
-            font-family: 'Titillium Web', sans-serif !important;
-            font-weight: 800 !important;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            border-left: 4px solid #e10600;
-            padding-left: 12px;
-            margin-top: 25px;
-            margin-bottom: 15px;
-        }}
-
-        /* Sidebar Labels */
-        [data-testid="stSidebar"] label {{
-            color: #a1a1aa !important;
-            font-weight: 700 !important;
-            font-size: 0.8rem !important;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            margin-bottom: 4px;
-        }}
-
-        /* Sidebar Widgets */
-        [data-testid="stSidebar"] div[data-baseweb="select"],
-        [data-testid="stSidebar"] div[data-baseweb="input"] {{
-            background-color: #1a1a24 !important;
-            border: 1px solid #33333e !important;
-            border-radius: 4px !important;
-        }}
-        
-        [data-testid="stSidebar"] .stSlider {{
-            padding-bottom: 15px;
-        }}
-
-        /* Sidebar Expanders */
-        [data-testid="stSidebar"] .stExpander {{
-            background-color: rgba(26, 26, 36, 0.6) !important;
-            border: 1px solid #33333e !important;
-            border-radius: 6px !important;
-            margin-bottom: 10px;
-        }}
-        
-        [data-testid="stSidebar"] .stExpander summary {{
-            color: #ffffff !important;
-            font-weight: 700 !important;
-        }}
-
-        /* Radio buttons in sidebar */
-        [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {{
-            font-size: 0.85rem;
-        }}
-
-        /* Metrics */
-        div[data-testid="metric-container"] {{
-            background-color: rgba(21, 21, 30, 0.85); 
-            border: 1px solid #e10600; 
-            padding: 15px 20px; 
-            border-radius: 8px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-            box-shadow: 0 4px 6px -1px rgba(225, 6, 0, 0.2);
-            backdrop-filter: blur(8px);
-        }}
-        div[data-testid="metric-container"]:hover {{ 
-            transform: translateY(-2px); 
-            border-color: #ff1801; 
-            box-shadow: 0 8px 15px -3px rgba(225, 6, 0, 0.4); 
-        }}
-        div[data-testid="stMetricLabel"] {{ 
-            color: #a1a1aa !important; 
-            font-size: 0.85rem !important; 
-            font-weight: 600 !important; 
-            text-transform: uppercase; 
-            letter-spacing: 1.2px; 
-        }}
-        div[data-testid="stMetricValue"] {{ 
-            color: #ffffff !important; 
-            font-weight: 800 !important; 
-        }}
-
-        /* Cards and general boxes */
-        .card-box {{
-            background: rgba(25, 25, 35, 0.8);
-            border: 1px solid #33333e;
-            border-radius: 10px;
-            padding: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }}
-        
-        .small-muted {{
-            color: #a1a1aa;
-            font-size: 0.85rem;
-        }}
-
-        /* Custom buttons */
-        .stButton button {{
-            background-color: #e10600 !important;
-            color: white !important;
-            font-weight: 700 !important;
-            border: none !important;
-            padding: 0.5rem 1rem !important;
-            border-radius: 4px !important;
-            text-transform: uppercase !important;
-            letter-spacing: 1px !important;
-            transition: all 0.2s !important;
-        }}
-        
-        .stButton button:hover {{
-            background-color: #ff1801 !important;
-            box-shadow: 0 0 15px rgba(225, 6, 0, 0.4) !important;
-            transform: translateY(-1px) !important;
-        }}
-
-        /* Divider */
-        hr {{
-            border-top: 1px solid #33333e !important;
-            margin: 1.5rem 0 !important;
-        }}
-        </style>
-    """,
-        unsafe_allow_html=True,
-    )
-
-
 def asset_path(*parts):
     return Path(__file__).resolve().parent.joinpath(*parts)
 
@@ -231,6 +66,17 @@ def _safe_name(name: str) -> str:
     )
 
 
+def image_to_data_uri(path):
+    """Convierte una imagen local a data URI para usarla en Plotly o HTML."""
+    if not path or not os.path.exists(path):
+        return None
+    mime_type, _ = mimetypes.guess_type(path)
+    mime_type = mime_type or "image/png"
+    with open(path, "rb") as f:
+        encoded = base64.b64encode(f.read()).decode("ascii")
+    return f"data:{mime_type};base64,{encoded}"
+
+
 def image_or_placeholder(path, title, subtitle=""):
     if path and os.path.exists(path):
         st.image(path, use_container_width=True)
@@ -247,15 +93,311 @@ def image_or_placeholder(path, title, subtitle=""):
         )
 
 
-def image_to_data_uri(path):
-    """Convierte una imagen local a data URI para usarla en Plotly."""
-    if not path or not os.path.exists(path):
-        return None
-    mime_type, _ = mimetypes.guess_type(path)
-    mime_type = mime_type or "image/png"
-    with open(path, "rb") as f:
-        encoded = base64.b64encode(f.read()).decode("ascii")
-    return f"data:{mime_type};base64,{encoded}"
+# =========================
+# Textos académicos externos
+# =========================
+ACADEMIC_TEXTS_DIR = asset_path("academic_texts")
+
+DEFAULT_ACADEMIC_TEXTS = {
+    "least_squares": """
+**Ajuste de Curvas / Mínimos Cuadrados**
+
+En este módulo se ajusta una función a los datos de telemetría para representar la degradación del neumático. El método de mínimos cuadrados busca el polinomio que minimiza el error cuadrático entre los valores observados y los valores estimados.
+
+En el simulador, esto permite construir una curva de ritmo por vuelta que luego se usa para comparar estrategias de carrera.
+
+Aplicación en el proyecto:
+- transformar datos discretos de telemetría en una función continua;
+- estimar la evolución del lap time;
+- alimentar el motor de estrategia con un modelo numérico interpretable.
+""",
+    "rk45": """
+**Runge-Kutta / EDO térmica**
+
+La temperatura del neumático se modela mediante una ecuación diferencial ordinaria. El método de Runge-Kutta aproxima la solución paso a paso, capturando la evolución térmica durante el stint.
+
+En el simulador, esta temperatura afecta la degradación, el agarre y las penalizaciones por sobrecalentamiento.
+
+Aplicación en el proyecto:
+- resolver la dinámica térmica vuelta a vuelta;
+- estimar ventanas óptimas de trabajo térmico;
+- conectar física del compuesto con la estrategia.
+""",
+    "simpson": """
+**Integración numérica / Regla de Simpson**
+
+La integración numérica permite calcular el tiempo total acumulado a partir de una función de tiempo por vuelta. Simpson 1/3 aproxima el área bajo la curva con mayor precisión que una suma simple cuando la función presenta variaciones suaves.
+
+En el simulador, se usa para estimar el costo temporal de un stint o una carrera completa.
+
+Aplicación en el proyecto:
+- obtener tiempo total continuo;
+- comparar estrategias con distinta cantidad de paradas;
+- cuantificar impacto de la degradación en el resultado final.
+""",
+    "newton": """
+**Newton-Raphson / Punto de cruce**
+
+Newton-Raphson se usa para encontrar raíces de una ecuación no lineal. En este contexto, ayuda a ubicar el crossover point: el instante en el que una estrategia deja de ser mejor que otra.
+
+En el simulador, la raíz de la diferencia entre dos funciones de tiempo representa el momento de cambio de estrategia.
+
+Aplicación en el proyecto:
+- determinar el punto óptimo de parada;
+- comparar tiempo de pista vs. tiempo de boxes;
+- resolver condiciones de empate entre dos estrategias.
+""",
+    "ml": """
+**Modelo de Machine Learning**
+
+El aprendizaje automático complementa el modelado matemático al capturar relaciones no lineales difíciles de representar con una sola ecuación. Aquí, el modelo se alimenta con variables como vida del neumático, temperatura y compuesto.
+
+En el simulador, ML actúa como predictor del tiempo de vuelta y se integra con los métodos numéricos para construir una solución híbrida.
+
+Aplicación en el proyecto:
+- mejorar la estimación del ritmo real;
+- combinar física e inferencia estadística;
+- reforzar la validación con datos de telemetría.
+""",
+    "global": """
+**Lectura general del simulador**
+
+Este laboratorio une modelado matemático, simulación y predicción de datos para resolver un problema realista de ingeniería: elegir la mejor estrategia de carrera bajo restricciones físicas, térmicas y operativas.
+
+Los métodos numéricos no aparecen como contenido aislado, sino como herramientas que resuelven partes concretas del sistema: ajuste, integración, resolución de EDO, búsqueda de raíces y validación comparativa.
+""",
+}
+
+
+def ensure_academic_texts_dir():
+    ACADEMIC_TEXTS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def load_text_asset(key: str) -> str:
+    ensure_academic_texts_dir()
+    file_path = ACADEMIC_TEXTS_DIR / f"{key}.md"
+    if file_path.exists():
+        try:
+            return file_path.read_text(encoding="utf-8")
+        except Exception:
+            pass
+    return DEFAULT_ACADEMIC_TEXTS.get(key, "")
+
+
+def render_explanation_block(title: str, body: str, icon: str = "🧠"):
+    st.markdown(
+        f"""
+        <div class="explain-box">
+            <div class="explain-title">{icon} {title}</div>
+            <div class="explain-body">{body}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def academic_method_card(title: str, short_desc: str, detail_key: str, icon: str = "📘"):
+    with st.expander(f"{icon} {title}", expanded=False):
+        st.markdown(f"<div class='small-muted'>{short_desc}</div>", unsafe_allow_html=True)
+        st.markdown(load_text_asset(detail_key))
+        st.caption("Podés reemplazar este texto por un archivo .md en academic_texts/ si querés editarlo sin tocar el código.")
+
+
+# =========================
+# Estilos
+# =========================
+def aplicar_estilos():
+    bg_path = asset_path("assets", "f1_bg.png")
+    bg_uri = image_to_data_uri(bg_path) if os.path.exists(bg_path) else ""
+    bg_css = (
+        f"background-image: url('{bg_uri}'); background-size: cover; background-position: center; "
+        f"background-attachment: fixed; background-blend-mode: overlay;"
+        if bg_uri
+        else ""
+    )
+
+    style = """
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        .stApp {
+            background-color: #0b0b0f;
+            color: #ffffff;
+            __BG_CSS__
+        }
+
+        html, body, [class*="css"] {
+            font-family: 'Inter', 'Titillium Web', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {background-color: transparent !important; border-bottom: none !important;}
+        [data-testid="stHeader"] { background: rgba(0,0,0,0); }
+
+        [data-testid="stSidebar"] {
+            background: linear-gradient(180deg, #0f0f14 0%, #15151e 100%) !important;
+            border-right: 2px solid #e10600 !important;
+            box-shadow: 5px 0 25px rgba(0,0,0,0.5);
+        }
+
+        [data-testid="stSidebarUserContent"] {
+            padding-top: 1rem;
+        }
+
+        [data-testid="stSidebar"] h1,
+        [data-testid="stSidebar"] h2,
+        [data-testid="stSidebar"] h3,
+        [data-testid="stSidebar"] .st-emotion-cache-10lo6u4 {
+            color: #e10600 !important;
+            font-family: 'Titillium Web', sans-serif !important;
+            font-weight: 800 !important;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            border-left: 4px solid #e10600;
+            padding-left: 12px;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+
+        [data-testid="stSidebar"] label {
+            color: #a1a1aa !important;
+            font-weight: 700 !important;
+            font-size: 0.8rem !important;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 4px;
+        }
+
+        [data-testid="stSidebar"] div[data-baseweb="select"],
+        [data-testid="stSidebar"] div[data-baseweb="input"] {
+            background-color: #1a1a24 !important;
+            border: 1px solid #33333e !important;
+            border-radius: 4px !important;
+        }
+
+        [data-testid="stSidebar"] .stSlider {
+            padding-bottom: 15px;
+        }
+
+        [data-testid="stSidebar"] .stExpander {
+            background-color: rgba(26, 26, 36, 0.6) !important;
+            border: 1px solid #33333e !important;
+            border-radius: 6px !important;
+            margin-bottom: 10px;
+        }
+
+        [data-testid="stSidebar"] .stExpander summary {
+            color: #ffffff !important;
+            font-weight: 700 !important;
+        }
+
+        div[data-testid="metric-container"] {
+            background-color: rgba(21, 21, 30, 0.85);
+            border: 1px solid #e10600;
+            padding: 15px 20px;
+            border-radius: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 6px -1px rgba(225, 6, 0, 0.2);
+            backdrop-filter: blur(8px);
+        }
+
+        div[data-testid="metric-container"]:hover {
+            transform: translateY(-2px);
+            border-color: #ff1801;
+            box-shadow: 0 8px 15px -3px rgba(225, 6, 0, 0.4);
+        }
+
+        div[data-testid="stMetricLabel"] {
+            color: #a1a1aa !important;
+            font-size: 0.85rem !important;
+            font-weight: 600 !important;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+        }
+
+        div[data-testid="stMetricValue"] {
+            color: #ffffff !important;
+            font-weight: 800 !important;
+        }
+
+        .card-box {
+            background: rgba(25, 25, 35, 0.8);
+            border: 1px solid #33333e;
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .small-muted {
+            color: #a1a1aa;
+            font-size: 0.85rem;
+        }
+
+        .explain-box {
+            background: linear-gradient(180deg, rgba(17, 24, 39, 0.92), rgba(15, 23, 42, 0.92));
+            border: 1px solid rgba(225, 6, 0, 0.35);
+            border-radius: 14px;
+            padding: 16px 18px;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.22);
+            margin: 6px 0 12px 0;
+        }
+
+        .explain-title {
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 1.02rem;
+            letter-spacing: 0.3px;
+            margin-bottom: 8px;
+        }
+
+        .explain-body {
+            color: #d1d5db;
+            font-size: 0.93rem;
+            line-height: 1.55;
+        }
+
+        .stButton button {
+            background-color: #e10600 !important;
+            color: white !important;
+            font-weight: 700 !important;
+            border: none !important;
+            padding: 0.5rem 1rem !important;
+            border-radius: 4px !important;
+            text-transform: uppercase !important;
+            letter-spacing: 1px !important;
+            transition: all 0.2s !important;
+        }
+
+        .stButton button:hover {
+            background-color: #ff1801 !important;
+            box-shadow: 0 0 15px rgba(225, 6, 0, 0.4) !important;
+            transform: translateY(-1px) !important;
+        }
+
+        hr {
+            border-top: 1px solid #33333e !important;
+            margin: 1.5rem 0 !important;
+        }
+
+        .method-chip {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 999px;
+            margin: 0 6px 6px 0;
+            background: rgba(225, 6, 0, 0.12);
+            border: 1px solid rgba(225, 6, 0, 0.35);
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+        }
+        </style>
+    """
+
+    style = style.replace("__BG_CSS__", bg_css)
+    st.markdown(style, unsafe_allow_html=True)
 
 
 # =========================
@@ -306,6 +448,9 @@ def get_driver_image(driver_name):
     return str(DEFAULT_DRIVER_IMAGE) if os.path.exists(DEFAULT_DRIVER_IMAGE) else None
 
 
+# =========================
+# Reglas de estrategia
+# =========================
 def normalizar_compuestos_por_regla(tipo_estrategia, lista_compuestos):
     """
     Regla:
@@ -341,6 +486,358 @@ def normalizar_compuestos_por_regla(tipo_estrategia, lista_compuestos):
 # =========================
 # Track / animación
 # =========================
+def _smooth_closed_path(points, n=420):
+    pts = np.asarray(points, dtype=float)
+    pts = pts[np.isfinite(pts).all(axis=1)]
+    if len(pts) < 4:
+        raise ValueError("Se necesitan al menos 4 puntos para construir el trazado.")
+
+    cleaned = [pts[0]]
+    for p in pts[1:]:
+        if np.linalg.norm(p - cleaned[-1]) > 1e-9:
+            cleaned.append(p)
+    pts = np.asarray(cleaned, dtype=float)
+
+    if np.linalg.norm(pts[0] - pts[-1]) > 1e-6:
+        pts = np.vstack([pts, pts[0]])
+
+    seg = np.sqrt(np.sum(np.diff(pts, axis=0) ** 2, axis=1))
+    s = np.concatenate([[0.0], np.cumsum(seg)])
+    total = s[-1] if s[-1] > 0 else 1.0
+    grid = np.linspace(0, total, n)
+
+    x = np.interp(grid, s, pts[:, 0])
+    y = np.interp(grid, s, pts[:, 1])
+
+    x = x - np.mean(x)
+    y = y - np.mean(y)
+
+    span = max(np.ptp(x), np.ptp(y))
+    if span > 0:
+        x = x / span
+        y = y / span
+
+    return x, y
+
+
+TRACK_SHAPES_RAW = {
+    "Monaco": [(-0.95, 0.00), (-0.75, 0.35), (-0.55, 0.55), (-0.15, 0.58), (0.10, 0.40), (0.25, 0.10), (0.05, -0.05), (-0.05, -0.30), (0.20, -0.55), (0.58, -0.42), (0.92, -0.15), (0.80, 0.20), (0.55, 0.45), (0.15, 0.70), (-0.35, 0.72)],
+    "Hungría": [(-0.85, 0.10), (-0.75, 0.45), (-0.40, 0.62), (0.10, 0.65), (0.58, 0.48), (0.80, 0.10), (0.72, -0.28), (0.30, -0.52), (-0.10, -0.60), (-0.55, -0.45), (-0.82, -0.10)],
+    "Silverstone": [(-0.95, 0.00), (-0.70, 0.28), (-0.35, 0.36), (0.05, 0.20), (0.30, 0.42), (0.68, 0.34), (0.92, 0.02), (0.65, -0.25), (0.22, -0.12), (-0.10, -0.35), (-0.55, -0.42), (-0.88, -0.18)],
+    "Spa": [(-0.95, -0.05), (-0.72, 0.30), (-0.35, 0.42), (0.02, 0.22), (0.20, 0.55), (0.45, 0.72), (0.75, 0.40), (0.92, 0.05), (0.72, -0.20), (0.25, -0.15), (-0.10, -0.35), (-0.55, -0.42), (-0.82, -0.18)],
+    "Monza": [(-0.95, 0.00), (-0.55, 0.02), (-0.15, 0.05), (0.25, 0.06), (0.55, 0.05), (0.90, 0.00), (0.60, -0.20), (0.20, -0.25), (-0.20, -0.22), (-0.62, -0.15)],
+    "Interlagos": [(-0.88, 0.05), (-0.60, 0.32), (-0.30, 0.10), (0.05, 0.40), (0.35, 0.22), (0.58, 0.50), (0.85, 0.18), (0.68, -0.20), (0.25, -0.30), (-0.05, -0.55), (-0.45, -0.42), (-0.75, -0.18)],
+    "Suzuka": [(-0.85, 0.10), (-0.55, 0.35), (-0.25, 0.20), (0.05, 0.45), (0.35, 0.25), (0.55, 0.55), (0.82, 0.30), (0.72, -0.05), (0.40, -0.25), (0.10, -0.52), (-0.30, -0.45), (-0.65, -0.20)],
+    "Zandvoort": [(-0.90, 0.15), (-0.65, 0.35), (-0.35, 0.45), (0.00, 0.35), (0.25, 0.55), (0.58, 0.42), (0.82, 0.10), (0.70, -0.25), (0.35, -0.40), (0.05, -0.55), (-0.35, -0.50), (-0.70, -0.20)],
+    "Baku": [(-0.95, 0.00), (-0.20, 0.02), (0.10, 0.25), (0.18, 0.55), (0.36, 0.70), (0.58, 0.58), (0.68, 0.20), (0.80, -0.10), (0.92, -0.15), (0.50, -0.28), (0.05, -0.25), (-0.45, -0.18), (-0.85, -0.12)],
+    "Singapur": [(-0.92, 0.15), (-0.68, 0.30), (-0.40, 0.18), (-0.15, 0.42), (0.15, 0.28), (0.42, 0.48), (0.70, 0.25), (0.82, -0.08), (0.50, -0.25), (0.18, -0.38), (-0.10, -0.52), (-0.50, -0.45), (-0.80, -0.18)],
+    "Las Vegas": [(-0.92, 0.00), (-0.58, 0.12), (-0.18, 0.10), (0.20, 0.12), (0.60, 0.10), (0.92, 0.00), (0.58, -0.18), (0.18, -0.20), (-0.20, -0.18), (-0.62, -0.12)],
+}
+
+
+def _resample_track_from_points(points, n=700):
+    pts = np.asarray(points, dtype=float)
+    pts = pts[np.isfinite(pts).all(axis=1)]
+    if len(pts) < 10:
+        return None
+
+    keep = [0]
+    for i in range(1, len(pts)):
+        if np.linalg.norm(pts[i] - pts[keep[-1]]) > 1e-9:
+            keep.append(i)
+    pts = pts[keep]
+
+    if np.linalg.norm(pts[0] - pts[-1]) > 1e-6:
+        pts = np.vstack([pts, pts[0]])
+
+    seg = np.sqrt(np.sum(np.diff(pts, axis=0) ** 2, axis=1))
+    s = np.concatenate([[0.0], np.cumsum(seg)])
+    total = s[-1]
+    if total <= 0:
+        return None
+
+    grid = np.linspace(0, total, n)
+    x = np.interp(grid, s, pts[:, 0])
+    y = np.interp(grid, s, pts[:, 1])
+
+    # Recentrado sin deformar la proporción natural del circuito.
+    x = x - np.mean(x)
+    y = y - np.mean(y)
+
+    span_x = np.ptp(x)
+    span_y = np.ptp(y)
+    if max(span_x, span_y) > 0:
+        scale = max(span_x, span_y)
+        x = x / scale
+        y = y / scale
+
+    return x, y
+
+
+def _track_quality_ok(x, y):
+    """Valida que la geometría sea lo bastante limpia para usarla en el mapa."""
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    if len(x) < 120 or len(y) < 120:
+        return False
+    if not (np.isfinite(x).all() and np.isfinite(y).all()):
+        return False
+
+    span_x = float(np.ptp(x))
+    span_y = float(np.ptp(y))
+    if span_x <= 0 or span_y <= 0:
+        return False
+
+    bbox = max(span_x, span_y)
+    aspect = max(span_x, span_y) / max(min(span_x, span_y), 1e-9)
+    if aspect > 8.0:
+        return False
+
+    pts = np.column_stack([x, y])
+    steps = np.sqrt(np.sum(np.diff(pts, axis=0) ** 2, axis=1))
+    if len(steps) == 0:
+        return False
+
+    median_step = float(np.median(steps))
+    p95_step = float(np.percentile(steps, 95))
+    if median_step <= 0:
+        return False
+    if p95_step > median_step * 12.0:
+        return False
+
+    closure = float(np.linalg.norm(pts[0] - pts[-1]))
+    if closure > bbox * 0.8:
+        return False
+
+    return True
+
+
+def _build_path_from_corners(corners, n=520):
+    """Construye un trazado limpio a partir de las esquinas del circuito."""
+    if not corners:
+        return None
+
+    try:
+        df = pd.DataFrame(corners)
+    except Exception:
+        return None
+
+    if not {"X", "Y"}.issubset(df.columns):
+        return None
+
+    if "Number" in df.columns:
+        try:
+            df = df.sort_values("Number")
+        except Exception:
+            pass
+    elif "Letter" in df.columns:
+        try:
+            df = df.sort_values("Letter")
+        except Exception:
+            pass
+
+    pts = df[["X", "Y"]].dropna().to_numpy()
+    if len(pts) < 4:
+        return None
+
+    return _smooth_closed_path(pts, n=n)
+
+
+TRACK_SHAPES_RAW = {
+    "Monaco": [(-0.95, 0.00), (-0.75, 0.35), (-0.55, 0.55), (-0.15, 0.58), (0.10, 0.40), (0.25, 0.10), (0.05, -0.05), (-0.05, -0.30), (0.20, -0.55), (0.58, -0.42), (0.92, -0.15), (0.80, 0.20), (0.55, 0.45), (0.15, 0.70), (-0.35, 0.72)],
+    "Hungría": [(-0.85, 0.10), (-0.75, 0.45), (-0.40, 0.62), (0.10, 0.65), (0.58, 0.48), (0.80, 0.10), (0.72, -0.28), (0.30, -0.52), (-0.10, -0.60), (-0.55, -0.45), (-0.82, -0.10)],
+    "Silverstone": [(-0.95, 0.00), (-0.70, 0.28), (-0.35, 0.36), (0.05, 0.20), (0.30, 0.42), (0.68, 0.34), (0.92, 0.02), (0.65, -0.25), (0.22, -0.12), (-0.10, -0.35), (-0.55, -0.42), (-0.88, -0.18)],
+    "Spa": [(-0.95, -0.05), (-0.72, 0.30), (-0.35, 0.42), (0.02, 0.22), (0.20, 0.55), (0.45, 0.72), (0.75, 0.40), (0.92, 0.05), (0.72, -0.20), (0.25, -0.15), (-0.10, -0.35), (-0.55, -0.42), (-0.82, -0.18)],
+    "Monza": [(-0.95, 0.00), (-0.55, 0.02), (-0.15, 0.05), (0.25, 0.06), (0.55, 0.05), (0.90, 0.00), (0.60, -0.20), (0.20, -0.25), (-0.20, -0.22), (-0.62, -0.15)],
+    "Interlagos": [(-0.88, 0.05), (-0.60, 0.32), (-0.30, 0.10), (0.05, 0.40), (0.35, 0.22), (0.58, 0.50), (0.85, 0.18), (0.68, -0.20), (0.25, -0.30), (-0.05, -0.55), (-0.45, -0.42), (-0.75, -0.18)],
+    "Suzuka": [(-0.85, 0.10), (-0.55, 0.35), (-0.25, 0.20), (0.05, 0.45), (0.35, 0.25), (0.55, 0.55), (0.82, 0.30), (0.72, -0.05), (0.40, -0.25), (0.10, -0.52), (-0.30, -0.45), (-0.65, -0.20)],
+    "Zandvoort": [(-0.90, 0.15), (-0.65, 0.35), (-0.35, 0.45), (0.00, 0.35), (0.25, 0.55), (0.58, 0.42), (0.82, 0.10), (0.70, -0.25), (0.35, -0.40), (0.05, -0.55), (-0.35, -0.50), (-0.70, -0.20)],
+    "Baku": [(-0.95, 0.00), (-0.20, 0.02), (0.10, 0.25), (0.18, 0.55), (0.36, 0.70), (0.58, 0.58), (0.68, 0.20), (0.80, -0.10), (0.92, -0.15), (0.50, -0.28), (0.05, -0.25), (-0.45, -0.18), (-0.85, -0.12)],
+    "Singapur": [(-0.92, 0.15), (-0.68, 0.30), (-0.40, 0.18), (-0.15, 0.42), (0.15, 0.28), (0.42, 0.48), (0.70, 0.25), (0.82, -0.08), (0.50, -0.25), (0.18, -0.38), (-0.10, -0.52), (-0.50, -0.45), (-0.80, -0.18)],
+    "Las Vegas": [(-0.92, 0.00), (-0.58, 0.12), (-0.18, 0.10), (0.20, 0.12), (0.60, 0.10), (0.92, 0.00), (0.58, -0.18), (0.18, -0.20), (-0.20, -0.18), (-0.62, -0.12)],
+}
+
+
+def _resample_track_from_points(points, n=700):
+    pts = np.asarray(points, dtype=float)
+    pts = pts[np.isfinite(pts).all(axis=1)]
+    if len(pts) < 10:
+        return None
+
+    keep = [0]
+    for i in range(1, len(pts)):
+        if np.linalg.norm(pts[i] - pts[keep[-1]]) > 1e-9:
+            keep.append(i)
+    pts = pts[keep]
+
+    if np.linalg.norm(pts[0] - pts[-1]) > 1e-6:
+        pts = np.vstack([pts, pts[0]])
+
+    seg = np.sqrt(np.sum(np.diff(pts, axis=0) ** 2, axis=1))
+    s = np.concatenate([[0.0], np.cumsum(seg)])
+    total = s[-1]
+    if total <= 0:
+        return None
+
+    grid = np.linspace(0, total, n)
+    x = np.interp(grid, s, pts[:, 0])
+    y = np.interp(grid, s, pts[:, 1])
+
+    # Recentrado sin deformar la proporción natural del circuito.
+    x = x - np.mean(x)
+    y = y - np.mean(y)
+
+    span_x = np.ptp(x)
+    span_y = np.ptp(y)
+    if max(span_x, span_y) > 0:
+        scale = max(span_x, span_y)
+        x = x / scale
+        y = y / scale
+
+    return x, y
+
+
+def _track_quality_ok(x, y):
+    """Valida que la geometría sea lo bastante limpia para usarla en el mapa."""
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    if len(x) < 120 or len(y) < 120:
+        return False
+    if not (np.isfinite(x).all() and np.isfinite(y).all()):
+        return False
+
+    span_x = float(np.ptp(x))
+    span_y = float(np.ptp(y))
+    if span_x <= 0 or span_y <= 0:
+        return False
+
+    bbox = max(span_x, span_y)
+    aspect = max(span_x, span_y) / max(min(span_x, span_y), 1e-9)
+    if aspect > 8.0:
+        return False
+
+    pts = np.column_stack([x, y])
+    steps = np.sqrt(np.sum(np.diff(pts, axis=0) ** 2, axis=1))
+    if len(steps) == 0:
+        return False
+
+    median_step = float(np.median(steps))
+    p95_step = float(np.percentile(steps, 95))
+    if median_step <= 0:
+        return False
+    if p95_step > median_step * 12.0:
+        return False
+
+    closure = float(np.linalg.norm(pts[0] - pts[-1]))
+    if closure > bbox * 0.8:
+        return False
+
+    return True
+
+
+def _build_path_from_corners(corners, n=520):
+    """Construye un trazado limpio a partir de las esquinas del circuito."""
+    if not corners:
+        return None
+
+    try:
+        df = pd.DataFrame(corners)
+    except Exception:
+        return None
+
+    if not {"X", "Y"}.issubset(df.columns):
+        return None
+
+    if "Number" in df.columns:
+        try:
+            df = df.sort_values("Number")
+        except Exception:
+            pass
+    elif "Letter" in df.columns:
+        try:
+            df = df.sort_values("Letter")
+        except Exception:
+            pass
+
+    pts = df[["X", "Y"]].dropna().to_numpy()
+    if len(pts) < 4:
+        return None
+
+    return _smooth_closed_path(pts, n=n)
+
+
+def obtener_track_geometry(track_name, year=2023, session_type="R"):
+    """
+    Devuelve geometría visual para el trazado de pista.
+    Prioriza FastF1 si la geometría es razonable; si no, usa un fallback estilizado.
+    """
+    config = CIRCUITOS_CONFIG.get(track_name, {"event_name": track_name})
+    event = config["event_name"]
+
+    corners = []
+    source = "fallback"
+
+    try:
+        import fastf1
+
+        session = fastf1.get_session(year, event, session_type)
+        session.load(telemetry=True, weather=False, messages=False)
+        circuit_info = session.get_circuit_info()
+
+        if hasattr(circuit_info, "corners") and circuit_info.corners is not None:
+            try:
+                corners = circuit_info.corners.to_dict("records")
+            except Exception:
+                corners = []
+
+        fast_lap = session.laps.pick_fastest()
+        if fast_lap is not None:
+            pos = fast_lap.get_pos_data()
+            if pos is not None and {"X", "Y"}.issubset(pos.columns):
+                pts = pos[["X", "Y"]].dropna().to_numpy()
+                resampled = _resample_track_from_points(pts, n=800)
+                if resampled is not None:
+                    x, y = resampled
+                    if _track_quality_ok(x, y):
+                        return {
+                            "x": x,
+                            "y": y,
+                            "corners": corners,
+                            "source": "fastf1_telemetry",
+                            "track_name": track_name,
+                        }
+                    source = "fastf1_rejected"
+
+        # Si la telemetría no fue buena, intentamos con las esquinas del circuito.
+        corner_path = _build_path_from_corners(corners, n=620)
+        if corner_path is not None:
+            x, y = corner_path
+            if _track_quality_ok(x, y):
+                return {
+                    "x": x,
+                    "y": y,
+                    "corners": corners,
+                    "source": "fastf1_corners",
+                    "track_name": track_name,
+                }
+            source = "corners_rejected"
+
+        source = source if source != "fallback" else "fastf1_fallback"
+    except Exception:
+        source = "fallback"
+
+    # Fallback estilizado: estable, limpio y consistente para defensa / demostración.
+    base = TRACK_SHAPES_RAW.get(track_name, TRACK_SHAPES_RAW["Silverstone"])
+    x, y = _smooth_closed_path(base, n=520)
+
+    return {
+        "x": x,
+        "y": y,
+        "corners": corners,
+        "source": source,
+        "track_name": track_name,
+    }
+
 def get_path_arrays(track_name):
     geom = obtener_track_geometry(track_name)
     x = np.asarray(geom["x"], dtype=float)
@@ -356,13 +853,6 @@ def get_car_position_on_path(x_path, y_path, progress_0_1):
 
 
 def get_lap_state(cumulative_times, sim_clock, total_laps):
-    """
-    Devuelve:
-    - current_lap_float: vuelta equivalente actual (1-based)
-    - current_lap_idx: índice 0-based
-    - lap_fraction: fracción dentro de la vuelta actual
-    - progress_race: progreso total en 0..1
-    """
     if cumulative_times is None or len(cumulative_times) == 0:
         return 1.0, 0, 0.0, 0.0
 
@@ -393,7 +883,7 @@ def elapsed_at_race_fraction(cumulative_times, total_laps, fraction_0_1):
     return float(np.interp(target_lap, laps, cumulative_times))
 
 
-def build_track_figure(track_name, track_geom, strategy_states, compare_mode=False):
+def build_track_figure(track_name, track_geom, strategy_states):
     x_path = np.asarray(track_geom["x"], dtype=float)
     y_path = np.asarray(track_geom["y"], dtype=float)
 
@@ -435,17 +925,12 @@ def build_track_figure(track_name, track_geom, strategy_states, compare_mode=Fal
             )
         )
 
-        # Hover invisible para que siga mostrando info aunque el ícono sea una imagen
         fig.add_trace(
             go.Scatter(
                 x=[x_car],
                 y=[y_car],
                 mode="markers",
-                marker=dict(
-                    size=42,
-                    color="rgba(0,0,0,0)",
-                    line=dict(width=0),
-                ),
+                marker=dict(size=42, color="rgba(0,0,0,0)", line=dict(width=0)),
                 name=st_data["label"],
                 hovertemplate=(
                     f"{st_data['label']}<br>"
@@ -477,7 +962,6 @@ def build_track_figure(track_name, track_geom, strategy_states, compare_mode=Fal
                 )
             )
         else:
-            # Fallback si no hay imagen
             fig.add_trace(
                 go.Scatter(
                     x=[x_car],
@@ -571,6 +1055,12 @@ def build_comparison_gap_figure(result_a, result_b):
     return fig
 
 
+def add_method_help_button(key: str, label: str, default_body: str):
+    with st.popover(label, use_container_width=False):
+        st.markdown(default_body)
+        st.caption("La explicación se carga desde academic_texts/ si existe el archivo correspondiente.")
+
+
 # =========================
 # Estado inicial
 # =========================
@@ -584,9 +1074,14 @@ if "last_tick" not in st.session_state:
     st.session_state.last_tick = time.time()
 if "mode_compare" not in st.session_state:
     st.session_state.mode_compare = False
+if "show_academic_panel" not in st.session_state:
+    st.session_state.show_academic_panel = True
+if "show_method_glossary" not in st.session_state:
+    st.session_state.show_method_glossary = False
 
 st.set_page_config(page_title="F1 Strategy Wall", layout="wide", page_icon="F1")
 aplicar_estilos()
+
 
 # =========================
 # UI principal
@@ -646,6 +1141,16 @@ pit_loss = st.sidebar.slider(
 
 st.sidebar.markdown("---")
 modo = st.sidebar.radio("Modo", ["1 Estrategia", "Comparar 2 Estrategias"], horizontal=False)
+
+st.sidebar.markdown("### Panel académico")
+st.session_state.show_academic_panel = st.sidebar.checkbox(
+    "Mostrar explicación de métodos",
+    value=st.session_state.show_academic_panel,
+)
+st.session_state.show_method_glossary = st.sidebar.checkbox(
+    "Mostrar glosario resumido",
+    value=st.session_state.show_method_glossary,
+)
 
 
 def build_strategy_sidebar(strategy_key, title, default_indices):
@@ -790,7 +1295,6 @@ lap_slider_value = st.sidebar.slider(
 if not st.session_state.playing:
     st.session_state.vuelta_actual = lap_slider_value
 
-
 # =========================
 # Backend pipeline caching
 # =========================
@@ -872,6 +1376,81 @@ animation_speed = max(1.0, animation_speed)
 
 
 # =========================
+# Panel académico superior
+# =========================
+if st.session_state.show_academic_panel:
+    st.markdown("## Laboratorio de modelado y simulación")
+    st.markdown(
+        """
+        Esta vista agrega una lectura académica del simulador: cada bloque numérico se explica como parte de un laboratorio de Modelado y Simulación, no solo como estrategia de Fórmula 1.
+        """
+    )
+
+    st.tabs(["Visión general", "Métodos numéricos", "Machine Learning", "Validación"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Visión general", "Métodos numéricos", "Machine Learning", "Validación"])
+
+    with tab1:
+        render_explanation_block("Lectura general", load_text_asset("global"), icon="🎯")
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            st.markdown('<span class="method-chip">Modelado matemático</span>', unsafe_allow_html=True)
+        with c2:
+            st.markdown('<span class="method-chip">Simulación numérica</span>', unsafe_allow_html=True)
+        with c3:
+            st.markdown('<span class="method-chip">Optimización</span>', unsafe_allow_html=True)
+        with c4:
+            st.markdown('<span class="method-chip">Validación con datos</span>', unsafe_allow_html=True)
+
+    with tab2:
+        academic_method_card(
+            "Ajuste de curvas / Mínimos cuadrados",
+            "Convierte datos discretos de telemetría en una función continua de degradación y ritmo.",
+            "least_squares",
+            icon="📈",
+        )
+        academic_method_card(
+            "Runge-Kutta / EDO térmica",
+            "Aproxima la evolución de la temperatura del neumático a lo largo de la vuelta y del stint.",
+            "rk45",
+            icon="🌡️",
+        )
+        academic_method_card(
+            "Integración numérica / Simpson",
+            "Calcula el tiempo total acumulado como área bajo la curva de lap time.",
+            "simpson",
+            icon="∫",
+        )
+        academic_method_card(
+            "Newton-Raphson / Crossover point",
+            "Ubica el instante en que pararse en boxes empieza a ser más rentable que continuar.",
+            "newton",
+            icon="🧭",
+        )
+
+    with tab3:
+        academic_method_card(
+            "Aprendizaje automático híbrido",
+            "Usa temperatura, compuesto y vida del neumático para predecir el lap time con un modelo estadístico.",
+            "ml",
+            icon="🤖",
+        )
+        st.info(
+            "En el proyecto, ML no reemplaza al modelado físico: lo complementa. La idea es que la predicción aprenda patrones que después se interpretan dentro del motor numérico."
+        )
+
+    with tab4:
+        st.markdown("### Cómo se valida el simulador")
+        st.write(
+            "Se comparan estrategias simuladas con escenarios de referencia y se observa la desviación entre tiempos predichos y tiempos esperados. El objetivo no es solo acertar una vuelta de parada, sino medir consistencia, sensibilidad térmica y estabilidad numérica."
+        )
+        st.markdown(
+            "**Indicadores sugeridos:** RMSE de lap times, error en crossover lap, sensibilidad a temperatura de pista, y estabilidad frente a cambios de compuesto."
+        )
+
+    st.divider()
+
+
+# =========================
 # Vista dinámica
 # =========================
 @st.fragment(run_every="250ms")
@@ -914,9 +1493,6 @@ def render_live_timing_view():
     else:
         st.success("COMPARACIÓN ACTIVADA: ambas estrategias se simulan en paralelo sobre el mismo trazado.")
 
-    # =========================
-    # Estados para el mapa
-    # =========================
     color_palette = ["#e10600", "#ffeb00"]
     symbol_palette = ["circle", "diamond"]
 
@@ -956,7 +1532,6 @@ def render_live_timing_view():
             }
         )
 
-    # Gap entre estrategias en el mismo punto relativo de carrera
     if len(strategy_results) > 1:
         gap_common = strategy_states[0]["common_elapsed"] - strategy_states[1]["common_elapsed"]
 
@@ -987,17 +1562,23 @@ def render_live_timing_view():
         strategy_states[0]["progress_text"] = f"{strategy_states[0]['progress_race'] * 100:.1f}%"
 
     st.subheader("Trazado del circuito y progreso")
+    st.caption(
+        "Este gráfico muestra el estado del sistema de simulación sobre la geometría del circuito. La posición del auto no es solo visual: sirve para interpretar el avance relativo de cada estrategia respecto del tiempo acumulado."
+    )
+    st.caption(f"Fuente geométrica cargada: {track_geom.get('source', 'fallback')}")
     track_fig = build_track_figure(
         track_name=track_name,
         track_geom=track_geom,
         strategy_states=strategy_states,
-        compare_mode=(len(strategy_results) > 1),
     )
     st.plotly_chart(track_fig, use_container_width=True, key="track_map")
 
-    # =========================
-    # Panel de métricas
-    # =========================
+    with st.expander("Explicación del gráfico del circuito", expanded=False):
+        st.markdown(load_text_asset("global"))
+        st.write(
+            "Aquí el trazado ayuda a contextualizar el problema: el método numérico no se usa de forma abstracta, sino dentro de un sistema que transforma variables físicas y temporales en una decisión de estrategia."
+        )
+
     if len(strategy_results) == 1:
         r = strategy_results[0]
         v_act = float(st.session_state.vuelta_actual)
@@ -1036,7 +1617,6 @@ def render_live_timing_view():
             f"<p style='text-align: center; color: #00d4ff; font-weight: bold;'>Progreso: Vuelta {v_act:.1f} / {total_race_laps} ({prog*100:.1f}%)</p>",
             unsafe_allow_html=True,
         )
-
     else:
         col_a, col_b = st.columns(2)
 
@@ -1088,6 +1668,9 @@ def render_live_timing_view():
     # Gráficos
     # =========================
     st.subheader("Ritmo Segmentado (Pace Analysis)")
+    st.caption(
+        "Este gráfico muestra el tiempo de vuelta por tramo. En términos de modelado y simulación, es la salida principal del sistema numérico sobre la variable lap time."
+    )
     fig1 = go.Figure()
 
     if len(strategy_results) == 1:
@@ -1204,16 +1787,34 @@ def render_live_timing_view():
     fig1.update_xaxes(title_text="Vuelta")
     st.plotly_chart(fig1, use_container_width=True, key="f_ritmo")
 
+    with st.expander("Explicación académica del gráfico de ritmo", expanded=False):
+        st.markdown(load_text_asset("least_squares"))
+        st.write(
+            "En este gráfico, cada punto sintetiza la salida de un modelo que combina ajuste de curvas, efecto térmico y penalización por combustible. Es útil para discutir convergencia, sensibilidad y interpretación física."
+        )
+
     if len(strategy_results) > 1:
         gap_fig = build_comparison_gap_figure(strategy_results[0], strategy_results[1])
         if gap_fig is not None:
             st.subheader("Diferencia acumulada entre estrategias")
+            st.caption(
+                "La diferencia acumulada muestra qué estrategia va adelante para un mismo nivel relativo de carrera. Matemáticamente, es una comparación de funciones acumuladas."
+            )
             st.plotly_chart(gap_fig, use_container_width=True, key="gap_compare")
+            with st.expander("Explicación académica de la comparación acumulada", expanded=False):
+                st.markdown(
+                    """
+                    La curva de diferencia acumulada permite leer el problema como una comparación entre dos funciones de costo. En el lenguaje de la materia, no se trata solo de un gráfico de carrera, sino de una herramienta para analizar cuál curva total minimiza mejor el tiempo bajo las mismas condiciones de simulación.
+                    """
+                )
 
     col1, col2 = st.columns(2)
 
     with col1:
         st.subheader("Evolución Térmica")
+        st.caption(
+            "Este gráfico representa la solución numérica de la EDO térmica. La temperatura afecta el comportamiento del neumático y modifica la salida del modelo de tiempo por vuelta."
+        )
         fig_termica = go.Figure()
 
         if len(strategy_results) == 1:
@@ -1266,8 +1867,17 @@ def render_live_timing_view():
         )
         st.plotly_chart(fig_termica, use_container_width=True, key="f_temp_live")
 
+        with st.popover("Ver explicación de la EDO térmica"):
+            st.markdown(load_text_asset("rk45"))
+            st.write(
+                "La integración paso a paso permite observar cómo una ecuación diferencial se traduce en una trayectoria térmica concreta dentro del simulador."
+            )
+
     with col2:
         st.subheader("Vida útil (%)")
+        st.caption(
+            "Este gráfico representa la evolución del desgaste mecánico del compuesto y muestra dónde el sistema entra en una zona de riesgo estructural."
+        )
         fig_desgaste = go.Figure()
 
         if len(strategy_results) == 1:
@@ -1348,6 +1958,46 @@ def render_live_timing_view():
         fig_desgaste.update_yaxes(range=[0, 105], title_text="Vida útil %")
         fig_desgaste.update_xaxes(title_text="Vuelta")
         st.plotly_chart(fig_desgaste, use_container_width=True, key="grafico_desgaste_fijo")
+
+        with st.popover("Ver explicación del desgaste y Simpson"):
+            st.markdown(load_text_asset("simpson"))
+            st.write(
+                "El desgaste no se presenta solo como un porcentaje: en la lectura de la materia funciona como una variable de estado que afecta el comportamiento global del sistema."
+            )
+
+    st.divider()
+
+    st.subheader("Bloque de lectura técnica rápida")
+    st.write(
+        "Estos bloques te sirven para la defensa oral y para reforzar la justificación académica del trabajo. Cada uno conecta un método numérico con su función dentro del simulador."
+    )
+    c1, c2 = st.columns(2)
+    with c1:
+        academic_method_card(
+            "Ajuste de curvas",
+            "Convierte telemetría ruidosa en una representación continua del comportamiento del neumático.",
+            "least_squares",
+            icon="📈",
+        )
+        academic_method_card(
+            "Runge-Kutta",
+            "Resuelve la ecuación térmica de forma numérica y estable.",
+            "rk45",
+            icon="🌡️",
+        )
+    with c2:
+        academic_method_card(
+            "Simpson",
+            "Integra el ritmo para obtener tiempo total de carrera o de stint.",
+            "simpson",
+            icon="∫",
+        )
+        academic_method_card(
+            "Newton-Raphson",
+            "Localiza el punto de cruce entre dos estrategias.",
+            "newton",
+            icon="🧭",
+        )
 
 
 render_live_timing_view()
