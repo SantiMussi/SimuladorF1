@@ -1583,6 +1583,9 @@ def render_live_timing_view():
             }
         )
 
+    if st.session_state.playing:
+        st.session_state.vuelta_actual = strategy_states[0]["current_lap_float"]
+
     if len(strategy_results) > 1:
         gap_common = strategy_states[0]["common_elapsed"] - strategy_states[1]["common_elapsed"]
 
@@ -1592,10 +1595,6 @@ def render_live_timing_view():
             
             # Eliminamos el visual_offset artificial para que la posición sea físicamente real
             state["gap_text"] = format_gap(gap_vs_other)
-
-        # Actualizar la vuelta de referencia si estamos en reproducción
-        if st.session_state.playing:
-            st.session_state.vuelta_actual = strategy_states[0]["current_lap_float"]
 
         leader_idx = 0 if gap_common < 0 else 1 if gap_common > 0 else 0
         st.info(
@@ -1677,8 +1676,8 @@ def render_live_timing_view():
             st.progress(min(1.0, l_prog))
             st.markdown(f"<p style='text-align:center; color:#e10600; font-size:0.8rem; font-weight:700; margin-top:-10px;'>PROGRESO DE VUELTA: {l_prog*100:.1f}%</p>", unsafe_allow_html=True)
         with c_race:
-            r_prog = v_act / float(total_race_laps)
-            st.progress(min(1.0, r_prog))
+            r_prog = strategy_states[0]["progress_race"]
+            st.progress(r_prog)
             st.markdown(f"<p style='text-align:center; color:#00d4ff; font-size:0.8rem; font-weight:700; margin-top:-10px;'>PROGRESO DE CARRERA: {r_prog*100:.1f}%</p>", unsafe_allow_html=True)
     else:
         col_a, col_b = st.columns(2)
@@ -1905,6 +1904,11 @@ def render_live_timing_view():
                     )
                 )
                 s_l = p_lap + 1
+
+            y_temp = np.interp(float(st.session_state.vuelta_actual), r["laps_range"], r["piecewise_temps"])
+            fig_termica.add_trace(
+                go.Scatter(x=[float(st.session_state.vuelta_actual)], y=[y_temp], mode="markers", marker=dict(symbol="star", size=16, color="#00d4ff", line=dict(color="white", width=2)), name="Posición Actual")
+            )
         else:
             for i, r in enumerate(strategy_results):
                 color = color_palette[i]
@@ -1924,6 +1928,12 @@ def render_live_timing_view():
                         )
                     )
                     s_l = p_lap + 1
+                
+                x_current = float(np.clip(strategy_states[i]["current_lap_float"], 1.0, float(total_race_laps)))
+                y_temp = np.interp(x_current, r["laps_range"], r["piecewise_temps"])
+                fig_termica.add_trace(
+                    go.Scatter(x=[x_current], y=[y_temp], mode="markers", marker=dict(symbol=symbol_palette[i], size=14, color=color, line=dict(color="white", width=2)), name=f"Act. {chr(65+i)}")
+                )
 
         fig_termica.update_layout(
             template="plotly_dark",
@@ -1991,6 +2001,11 @@ def render_live_timing_view():
                     )
                 )
                 s_l = p_lap + 1
+
+            y_life = np.interp(float(st.session_state.vuelta_actual), r["laps_range"], r["piecewise_life"])
+            fig_desgaste.add_trace(
+                go.Scatter(x=[float(st.session_state.vuelta_actual)], y=[y_life], mode="markers", marker=dict(symbol="star", size=16, color="#00d4ff", line=dict(color="white", width=2)), name="Posición Actual")
+            )
         else:
             for i, r in enumerate(strategy_results):
                 color = color_palette[i]
@@ -2010,6 +2025,12 @@ def render_live_timing_view():
                         )
                     )
                     s_l = p_lap + 1
+                
+                x_current = float(np.clip(strategy_states[i]["current_lap_float"], 1.0, float(total_race_laps)))
+                y_life = np.interp(x_current, r["laps_range"], r["piecewise_life"])
+                fig_desgaste.add_trace(
+                    go.Scatter(x=[x_current], y=[y_life], mode="markers", marker=dict(symbol=symbol_palette[i], size=14, color=color, line=dict(color="white", width=2)), name=f"Act. {chr(65+i)}")
+                )
 
             fig_desgaste.add_hrect(
                 y0=0,
