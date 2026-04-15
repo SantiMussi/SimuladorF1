@@ -164,7 +164,7 @@ Aplicación en el proyecto:
 - reforzar la validación con datos de telemetría.
 """,
     "global": """
-**Lectura general del simulador**
+Lectura general del simulador:
 
 Este laboratorio une modelado matemático, simulación y predicción de datos para resolver un problema realista de ingeniería: elegir la mejor estrategia de carrera bajo restricciones físicas, térmicas y operativas.
 
@@ -1129,8 +1129,6 @@ if "mode_compare" not in st.session_state:
     st.session_state.mode_compare = False
 if "show_academic_panel" not in st.session_state:
     st.session_state.show_academic_panel = True
-if "show_method_glossary" not in st.session_state:
-    st.session_state.show_method_glossary = False
 
 st.set_page_config(page_title="F1 Strategy Wall", layout="wide", page_icon="F1")
 aplicar_estilos()
@@ -1200,11 +1198,6 @@ st.session_state.show_academic_panel = st.sidebar.checkbox(
     "Mostrar explicación de métodos",
     value=st.session_state.show_academic_panel,
 )
-st.session_state.show_method_glossary = st.sidebar.checkbox(
-    "Mostrar glosario resumido",
-    value=st.session_state.show_method_glossary,
-)
-
 
 def build_strategy_sidebar(strategy_key, title, default_indices):
     with st.sidebar.expander(title, expanded=True):
@@ -1449,7 +1442,7 @@ if st.session_state.show_academic_panel:
     tab1, tab2, tab3, tab4 = st.tabs(["Visión general", "Métodos numéricos", "Machine Learning", "Validación"])
 
     with tab1:
-        render_explanation_block("Lectura general", load_text_asset("global"), icon="🎯")
+        render_explanation_block("Lectura general", load_text_asset("global"), icon="")
         c1, c2, c3, c4 = st.columns(4)
         with c1:
             st.markdown('<span class="method-chip">Modelado matemático</span>', unsafe_allow_html=True)
@@ -1465,25 +1458,25 @@ if st.session_state.show_academic_panel:
             "Ajuste de curvas / Mínimos cuadrados",
             "Convierte datos discretos de telemetría en una función continua de degradación y ritmo.",
             "least_squares",
-            icon="📈",
+            icon="",
         )
         academic_method_card(
             "Runge-Kutta / EDO térmica",
             "Aproxima la evolución de la temperatura del neumático a lo largo de la vuelta y del stint.",
             "rk45",
-            icon="🌡️",
+            icon="",
         )
         academic_method_card(
             "Integración numérica / Simpson",
             "Calcula el tiempo total acumulado como área bajo la curva de lap time.",
             "simpson",
-            icon="∫",
+            icon="",
         )
         academic_method_card(
             "Newton-Raphson / Crossover point",
             "Ubica el instante en que pararse en boxes empieza a ser más rentable que continuar.",
             "newton",
-            icon="🧭",
+            icon="",
         )
 
     with tab3:
@@ -1491,7 +1484,7 @@ if st.session_state.show_academic_panel:
             "Aprendizaje automático híbrido",
             "Usa temperatura, compuesto y vida del neumático para predecir el lap time con un modelo estadístico.",
             "ml",
-            icon="🤖",
+            icon="",
         )
         st.info(
             "En el proyecto, ML no reemplaza al modelado físico: lo complementa. La idea es que la predicción aprenda patrones que después se interpretan dentro del motor numérico."
@@ -2062,26 +2055,26 @@ def render_live_timing_view():
             "Ajuste de curvas",
             "Convierte telemetría ruidosa en una representación continua del comportamiento del neumático.",
             "least_squares",
-            icon="📈",
+            icon="",
         )
         academic_method_card(
             "Runge-Kutta",
             "Resuelve la ecuación térmica de forma numérica y estable.",
             "rk45",
-            icon="🌡️",
+            icon="",
         )
     with c2:
         academic_method_card(
             "Simpson",
             "Integra el ritmo para obtener tiempo total de carrera o de stint.",
             "simpson",
-            icon="∫",
+            icon="",
         )
         academic_method_card(
             "Newton-Raphson",
             "Localiza el punto de cruce entre dos estrategias.",
             "newton",
-            icon="🧭",
+            icon="",
         )
 
 
