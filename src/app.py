@@ -19,9 +19,7 @@ from modelo_ml import PredictorDegradacion
 from strategy import EngineEstrategia
 
 
-# =========================
 # Helpers visuales
-# =========================
 def format_time(total_seconds):
     """Formatea segundos en MM:SS.ms o HH:MM:SS.ms si supera la hora."""
     if total_seconds is None or not np.isfinite(total_seconds):
@@ -97,9 +95,7 @@ def image_or_placeholder(path, title, subtitle=""):
         )
 
 
-# =========================
 # Textos académicos externos
-# =========================
 ACADEMIC_TEXTS_DIR = asset_path("academic_texts")
 
 DEFAULT_ACADEMIC_TEXTS = {
@@ -206,9 +202,7 @@ def academic_method_card(title: str, short_desc: str, detail_key: str, icon: str
         st.markdown(load_text_asset(detail_key))
 
 
-# =========================
 # Estilos
-# =========================
 def aplicar_estilos():
     bg_path = asset_path("assets", "f1_bg.png")
     bg_uri = image_to_data_uri(bg_path) if os.path.exists(bg_path) else ""
@@ -455,9 +449,7 @@ def aplicar_estilos():
     st.markdown(style, unsafe_allow_html=True)
 
 
-# =========================
 # Catálogo placeholders
-# =========================
 TEAM_DRIVERS = {
     "Ferrari": ["Charles Leclerc", "Lewis Hamilton"],
     "Red Bull": ["Max Verstappen", "Isack Hadjar"],
@@ -504,9 +496,7 @@ def get_driver_image(driver_name):
     return str(DEFAULT_DRIVER_IMAGE) if os.path.exists(DEFAULT_DRIVER_IMAGE) else None
 
 
-# =========================
 # Reglas de estrategia
-# =========================
 def normalizar_compuestos_por_regla(tipo_estrategia, lista_compuestos):
     """
     Regla:
@@ -539,9 +529,7 @@ def normalizar_compuestos_por_regla(tipo_estrategia, lista_compuestos):
     return compuestos, False
 
 
-# =========================
 # Track / animación
-# =========================
 def _smooth_closed_path(points, n=420):
     pts = np.asarray(points, dtype=float)
     pts = pts[np.isfinite(pts).all(axis=1)]
@@ -1115,9 +1103,7 @@ def add_method_help_button(key: str, label: str, default_body: str):
         st.caption("La explicación se carga desde academic_texts/ si existe el archivo correspondiente.")
 
 
-# =========================
 # Estado inicial
-# =========================
 if "vuelta_actual" not in st.session_state:
     st.session_state.vuelta_actual = 1.0
 if "playing" not in st.session_state:
@@ -1135,9 +1121,7 @@ st.set_page_config(page_title="F1 Strategy Wall", layout="wide", page_icon="F1")
 aplicar_estilos()
 
 
-# =========================
 # UI principal
-# =========================
 logo_path = asset_path("assets", "F1_logo.svg")
 logo_uri = image_to_data_uri(logo_path) if os.path.exists(logo_path) else ""
 
@@ -1160,9 +1144,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# =========================
 # Sidebar
-# =========================
 if logo_uri:
     st.sidebar.markdown(
         f"""
@@ -1349,9 +1331,7 @@ sim_speed_factor = st.sidebar.select_slider(
 if not st.session_state.playing:
     st.session_state.vuelta_actual = lap_slider_value
 
-# =========================
 # Backend pipeline caching
-# =========================
 @st.cache_data(show_spinner=False)
 def cargar_datos_entrenamiento(track_name):
     return obtener_datos_aumentados(track_name=track_name)
@@ -1402,9 +1382,7 @@ def get_sim_data(track_name, track_temp, total_race_laps, pit_loss, lista_compue
     }
 
 
-# =========================
 # Cargar estrategias
-# =========================
 strategy_results = []
 for s in strategy_inputs:
     sim_data = get_sim_data(
@@ -1429,9 +1407,7 @@ if reference_total_time <= 0:
 animation_speed = float(sim_speed_factor)
 
 
-# =========================
 # Panel académico superior
-# =========================
 if st.session_state.show_academic_panel:
     st.markdown("## Laboratorio de modelado y simulación")
     st.markdown(
@@ -1503,9 +1479,7 @@ if st.session_state.show_academic_panel:
     st.divider()
 
 
-# =========================
 # Vista dinámica
-# =========================
 @st.fragment(run_every="500ms")
 def render_live_timing_view():
     now = time.time()
@@ -1727,9 +1701,7 @@ def render_live_timing_view():
 
     st.divider()
 
-    # =========================
-    # Gráficos
-    # =========================
+# Gráficos
     st.subheader("Ritmo Segmentado (Pace Analysis)")
     st.caption(
         "Este gráfico muestra el tiempo de vuelta por tramo. En términos de modelado y simulación, es la salida principal del sistema numérico sobre la variable lap time."

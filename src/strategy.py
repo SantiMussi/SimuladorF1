@@ -65,7 +65,7 @@ class EngineEstrategia:
             current_lap = lap_idx + 1
             absolute_lap = start_race_lap + lap_idx 
             
-            # --- FACTOR DE CARGA DINÁMICO (REALISMO) ---
+# FACTOR DE CARGA DINÁMICO (REALISMO)
             # El auto es más pesado al principio (mayor desgaste) y más liviano al final.
             # Rango: 1.05 (pesado) -> 0.95 (liviano)
             load_factor = 1.05 - (0.1 * (absolute_lap / total_laps_gp))
