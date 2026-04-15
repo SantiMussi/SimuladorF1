@@ -213,8 +213,9 @@ def aplicar_estilos():
     bg_path = asset_path("assets", "f1_bg.png")
     bg_uri = image_to_data_uri(bg_path) if os.path.exists(bg_path) else ""
     bg_css = (
-        f"background-image: url('{bg_uri}'); background-size: cover; background-position: center; "
-        f"background-attachment: fixed; background-blend-mode: overlay;"
+        f"background-image: linear-gradient(rgba(11, 11, 15, 0.45), rgba(11, 11, 15, 0.45)), url('{bg_uri}'); "
+        f"background-size: cover; background-position: center; "
+        f"background-attachment: fixed;"
         if bg_uri
         else ""
     )
@@ -261,9 +262,9 @@ def aplicar_estilos():
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         """
 
-    style = f"""
+    style = """
         <style>
-        {fonts_css}
+        __FONTS_CSS__
 
         .stApp {
             background-color: #0b0b0f;
@@ -450,7 +451,7 @@ def aplicar_estilos():
         </style>
     """
 
-    style = style.replace("__BG_CSS__", bg_css)
+    style = style.replace("__FONTS_CSS__", fonts_css).replace("__BG_CSS__", bg_css)
     st.markdown(style, unsafe_allow_html=True)
 
 
