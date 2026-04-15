@@ -48,36 +48,41 @@ def format_gap(delta_seconds):
 
 
 def aplicar_estilos():
+    bg_path = asset_path("assets", "f1_bg.png")
+    bg_uri = image_to_data_uri(bg_path) if os.path.exists(bg_path) else ""
+    bg_css = f"background-image: url('{bg_uri}'); background-size: cover; background-position: center; background-attachment: fixed; background-blend-mode: overlay;" if bg_uri else ""
+    
     st.markdown(
-        """
+        f"""
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        .stApp { background-color: #0b0f19; color: #e2e8f0; }
-        html, body, [class*="css"] { 
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-        }
-        #MainMenu {visibility: hidden;} 
-        footer {visibility: hidden;}
-        header {background-color: transparent !important; border-bottom: none !important;}
-        [data-testid="stHeader"] { background: rgba(0,0,0,0); }
-        div[data-testid="metric-container"] {
-            background-color: #151a28; border: 1px solid #1e253c; padding: 15px 20px; border-radius: 12px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-        div[data-testid="metric-container"]:hover { transform: translateY(-2px); border-color: #00d4ff; }
-        div[data-testid="stMetricLabel"] { color: #94a3b8 !important; font-size: 0.9rem !important; font-weight: 600 !important; }
-        div[data-testid="stMetricValue"] { color: #f8fafc !important; font-weight: 700 !important; }
-        [data-testid="stSidebar"] { background-color: #0f172a; border-right: 1px solid #1e293b; }
-        .card-box {
-            background: #151a28;
-            border: 1px solid #1e253c;
-            border-radius: 16px;
+        @import url('https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;800&display=swap');
+        .stApp {{ background-color: #15151e; color: #ffffff; {bg_css} }}
+        html, body, [class*="css"] {{ 
+            font-family: 'Titillium Web', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+        }}
+        #MainMenu {{visibility: hidden;}} 
+        footer {{visibility: hidden;}}
+        header {{background-color: transparent !important; border-bottom: none !important;}}
+        [data-testid="stHeader"] {{ background: rgba(0,0,0,0); }}
+        div[data-testid="metric-container"] {{
+            background-color: rgba(21, 21, 30, 0.8); border: 1px solid #e10600; padding: 15px 20px; border-radius: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 6px -1px rgba(225, 6, 0, 0.2);
+            backdrop-filter: blur(5px);
+        }}
+        div[data-testid="metric-container"]:hover {{ transform: translateY(-2px); border-color: #ff1801; box-shadow: 0 6px 12px -2px rgba(225, 6, 0, 0.4); }}
+        div[data-testid="stMetricLabel"] {{ color: #a1a1aa !important; font-size: 0.9rem !important; font-weight: 600 !important; text-transform: uppercase; letter-spacing: 1px; }}
+        div[data-testid="stMetricValue"] {{ color: #ffffff !important; font-weight: 700 !important; }}
+        [data-testid="stSidebar"] {{ background-color: rgba(21, 21, 30, 0.95); border-right: 2px solid #e10600; backdrop-filter: blur(10px); }}
+        .card-box {{
+            background: rgba(21, 21, 30, 0.8);
+            border: 1px solid #3f3f46;
+            border-radius: 8px;
             padding: 14px 16px;
-        }
-        .small-muted {
-            color: #94a3b8;
+        }}
+        .small-muted {{
+            color: #a1a1aa;
             font-size: 0.9rem;
-        }
+        }}
         </style>
     """,
         unsafe_allow_html=True,
@@ -390,7 +395,7 @@ def build_track_figure(track_name, track_geom, strategy_states, compare_mode=Fal
         arrowhead=2,
         ax=20,
         ay=-20,
-        font=dict(color="#00d4ff", size=10),
+        font=dict(color="#e10600", size=10),
     )
 
     fig.update_layout(
@@ -423,7 +428,7 @@ def build_comparison_gap_figure(result_a, result_b):
             x=laps,
             y=gap,
             mode="lines",
-            line=dict(width=3, color="#00d4ff"),
+            line=dict(width=3, color="#e10600"),
             name="Gap A - B",
         )
     )
@@ -463,12 +468,25 @@ aplicar_estilos()
 # =========================
 # UI principal
 # =========================
+logo_path = asset_path("assets", "F1_logo.svg")
+logo_uri = image_to_data_uri(logo_path) if os.path.exists(logo_path) else ""
+
+if logo_uri:
+    st.markdown(
+        f"""
+        <div style='text-align: center; margin-bottom: 5px; margin-top: 15px;'>
+            <img src='{logo_uri}' width='150' alt='F1 Logo'/>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
 st.markdown(
-    "<h1 style='text-align: center; color: #00d4ff; margin-bottom: 0;'>F1 STRATEGY CONTROL WALL</h1>",
+    "<h1 style='text-align: center; color: #ffffff; margin-bottom: 0; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; font-family: \"Titillium Web\", sans-serif;'>STRATEGY CONTROL WALL</h1>",
     unsafe_allow_html=True,
 )
 st.markdown(
-    "<p style='text-align: center; color: #94a3b8; font-weight: 500; margin-top: 0;'>Enterprise Race Engineering Suite</p>",
+    "<p style='text-align: center; color: #e10600; font-weight: 600; margin-top: 0; letter-spacing: 1px;'>ENTERPRISE RACE ENGINEERING SUITE</p>",
     unsafe_allow_html=True,
 )
 
@@ -766,7 +784,7 @@ def render_live_timing_view():
     # =========================
     # Estados para el mapa
     # =========================
-    color_palette = ["#00d4ff", "#ffb000"]
+    color_palette = ["#e10600", "#ffeb00"]
     symbol_palette = ["circle", "diamond"]
 
     strategy_states = []
