@@ -1527,6 +1527,17 @@ for s in strategy_inputs:
         tuple(s["lista_compuestos"]),
     )
     strategy_results.append({**s, **sim_data})
+    
+    
+crossover_info = None
+if len(strategy_results) > 1:
+    comparison_engine = EngineEstrategia(entrenar_modelo_ia(track_name), track_name=track_name)
+    comparison_engine.pit_loss = float(pit_loss)
+    crossover_info = comparison_engine.encontrar_crossover_estrategias(
+        strategy_results[0]["cumulative_times"],
+        strategy_results[1]["cumulative_times"],
+        int(total_race_laps),
+    )
 
 track_geom = get_path_arrays(track_name)[0]
 track_x = np.asarray(track_geom["x"], dtype=float)
