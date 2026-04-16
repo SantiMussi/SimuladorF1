@@ -1551,9 +1551,10 @@ def render_live_timing_view():
                 "color": color_palette[i % len(color_palette)],
                 "symbol": symbol_palette[i % len(symbol_palette)],
                 "dash": "solid" if i == 0 else "dash",
-                "display_progress": lap_fraction, # Usar progreso de vuelta real
+                "display_progress": lap_fraction,
                 "gap_text": "N/A",
                 "progress_text": f"{progress_race * 100:.1f}%",
+                "lap_text": f"{current_lap_float:.2f}",
                 "icon_path": r.get("team_image"),
             }
         )
@@ -1649,11 +1650,36 @@ def render_live_timing_view():
         with c_lap:
             l_prog = strategy_states[0]["lap_fraction"]
             st.progress(min(1.0, l_prog))
-            st.markdown(f"<p style='text-align:center; color:#e10600; font-size:0.8rem; font-weight:700; margin-top:-10px;'>PROGRESO DE VUELTA: {l_prog*100:.1f}%</p>", unsafe_allow_html=True)
+            st.markdown(
+                f"<p style='text-align:center; color:#e10600; font-size:0.8rem; font-weight:700; margin-top:-10px;'>PROGRESO DE VUELTA: {l_prog*100:.1f}%</p>",
+                unsafe_allow_html=True,
+            )
+
         with c_race:
             r_prog = strategy_states[0]["progress_race"]
             st.progress(r_prog)
-            st.markdown(f"<p style='text-align:center; color:#00d4ff; font-size:0.8rem; font-weight:700; margin-top:-10px;'>PROGRESO DE CARRERA: {r_prog*100:.1f}%</p>", unsafe_allow_html=True)
+            st.markdown(
+                f"""
+                <div style='
+                    text-align:center;
+                    color:#00d4ff;
+                    font-size:0.8rem;
+                    font-weight:700;
+                    margin-top:-10px;
+                    display:flex;
+                    justify-content:center;
+                    align-items:center;
+                    gap:10px;
+                    flex-wrap:wrap;
+                '>
+                    <span>PROGRESO DE CARRERA: {r_prog*100:.1f}%</span>
+                    <span style='color:#ffffff;'>|</span>
+                    <span style='color:#ffffff;'>VUELTA ACTUAL: {strategy_states[0]["current_lap_float"]:.2f}</span>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+                    
     else:
         col_a, col_b = st.columns(2)
 
