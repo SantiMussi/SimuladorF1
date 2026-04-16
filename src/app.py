@@ -1491,14 +1491,18 @@ def get_sim_data(track_name, track_temp, total_race_laps, pit_loss, lista_compue
     tiempos_race = resultado_opt["race_trace"]
     comp_trace = resultado_opt["compounds_trace"]
 
-    piecewise_temps, piecewise_life = [], []
-    for i, p_lap in enumerate(vueltas_parada + [total_race_laps]):
-        comp = lista_compuestos[i]
-        duracion = p_lap - (vueltas_parada[i - 1] if i > 0 else 0)
-        engine.compound = comp
-        _, _, t_sector, l_sector = engine.simular_stint(duracion, track_temp)
-        piecewise_temps.extend(t_sector.tolist())
-        piecewise_life.extend(l_sector.tolist())
+    if "temps_trace" in resultado_opt and "life_trace" in resultado_opt:
+        piecewise_temps = resultado_opt["temps_trace"].tolist() if isinstance(resultado_opt["temps_trace"], np.ndarray) else resultado_opt["temps_trace"]
+        piecewise_life = resultado_opt["life_trace"].tolist() if isinstance(resultado_opt["life_trace"], np.ndarray) else resultado_opt["life_trace"]
+    else:
+        piecewise_temps, piecewise_life = [], []
+        for i, p_lap in enumerate(vueltas_parada + [total_race_laps]):
+            comp = lista_compuestos[i]
+            duracion = p_lap - (vueltas_parada[i - 1] if i > 0 else 0)
+            engine.compound = comp
+            _, _, t_sector, l_sector = engine.simular_stint(duracion, track_temp)
+            piecewise_temps.extend(t_sector.tolist())
+            piecewise_life.extend(l_sector.tolist())
 
     cumulative_times = np.cumsum(tiempos_race) if len(tiempos_race) > 0 else np.array([])
 

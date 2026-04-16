@@ -212,13 +212,17 @@ class EngineEstrategia:
         vueltas_optimas = []
 
         perfiles = {}
+        perfiles_temp = {}
+        perfiles_life = {}
         prefijos_simpson = {}
 
         for c in set(compounds):
             original_compound = self.compound
             self.compound = c
-            _, tiempos, _, _ = self.simular_stint(total_race_laps, track_temp)
+            _, tiempos, temps, life = self.simular_stint(total_race_laps, track_temp)
             perfiles[c] = tiempos
+            perfiles_temp[c] = temps
+            perfiles_life[c] = life
             prefijos_simpson[c] = self._prefix_area_simpson(tiempos)
             self.compound = original_compound
 
@@ -313,13 +317,18 @@ class EngineEstrategia:
 
         race_trace = []
         compounds_trace = []
+        temps_trace = []
+        life_trace = []
         periodos = vueltas_optimas + [total_race_laps]
         current_absolute_lap = 1
 
         for i, fin_lap in enumerate(periodos):
             comp = compounds[i]
             duracion = fin_lap - (periodos[i - 1] if i > 0 else 0)
+            
             segmento_base = perfiles[comp][:duracion]
+            segmento_temp = perfiles_temp[comp][:duracion]
+            segmento_life = perfiles_life[comp][:duracion]
 
             for v_stint in range(duracion):
                 t_final = float(segmento_base[v_stint] - (current_absolute_lap * 0.04))
@@ -327,12 +336,16 @@ class EngineEstrategia:
                 current_absolute_lap += 1
 
             compounds_trace.extend([comp] * duracion)
+            temps_trace.extend(segmento_temp.tolist())
+            life_trace.extend(segmento_life.tolist())
 
         return {
             "vueltas_optimas": vueltas_optimas,
             "tiempo_total": mejor_tiempo,
             "race_trace": np.array(race_trace),
             "compounds_trace": compounds_trace,
+            "temps_trace": np.array(temps_trace),
+            "life_trace": np.array(life_trace),
         }
 
     def calcular_estrategia_optima(self, laps_sim, tiempos_sim, total_race_laps):
