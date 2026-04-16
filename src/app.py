@@ -20,6 +20,13 @@ from strategy import EngineEstrategia
 
 
 # Helpers visuales
+COMPOUND_COLORS = {
+    "SOFT": "#ff3333",
+    "MEDIUM": "#ffff33",
+    "HARD": "#f0f0f0"
+}
+
+
 def format_time(total_seconds):
     """Formatea segundos en MM:SS.ms o HH:MM:SS.ms si supera la hora."""
     if total_seconds is None or not np.isfinite(total_seconds):
@@ -1107,6 +1114,7 @@ def build_track_figure(track_name, track_geom, strategy_states):
                 name=st_data["label"],
                 hovertemplate=(
                     f"{st_data['label']}<br>"
+                    f"Compuesto: {st_data['compound']}<br>"
                     f"Vuelta: {st_data['current_lap_float']:.2f}<br>"
                     f"Progreso carrera: {st_data['progress_text']}<br>"
                     f"Gap: {st_data['gap_text']}<extra></extra>"
@@ -1144,13 +1152,14 @@ def build_track_figure(track_name, track_geom, strategy_states):
                         symbol=st_data["symbol"],
                         size=22,
                         color=st_data["color"],
-                        line=dict(color="white", width=2),
+                        line=dict(color=st_data["strategy_color"], width=4),
                     ),
                     text=[st_data["short_label"]],
                     textposition="top center",
                     name=st_data["label"],
                     hovertemplate=(
                         f"{st_data['label']}<br>"
+                        f"Compuesto: {st_data['compound']}<br>"
                         f"Vuelta: {st_data['current_lap_float']:.2f}<br>"
                         f"Progreso carrera: {st_data['progress_text']}<br>"
                         f"Gap: {st_data['gap_text']}<extra></extra>"
@@ -1665,16 +1674,25 @@ def render_live_timing_view():
             common_fraction,
         )
 
+        stint_idx = 0
+        for p in r["vueltas_parada"]:
+            if current_lap_float > p + 1:
+                stint_idx += 1
+        current_comp = r["lista_compuestos"][min(stint_idx, len(r["lista_compuestos"]) - 1)]
+        comp_color = COMPOUND_COLORS.get(current_comp, "#00d4ff")
+
         strategy_states.append(
             {
                 "label": f"Estrategia {chr(65 + i)}",
+                "compound": current_comp,
                 "short_label": f"{chr(65 + i)}",
                 "current_lap_float": current_lap_float,
                 "current_lap_idx": current_lap_idx,
                 "lap_fraction": lap_fraction,
                 "progress_race": progress_race,
                 "common_elapsed": common_elapsed,
-                "color": color_palette[i % len(color_palette)],
+                "color": comp_color,
+                "strategy_color": color_palette[i % len(color_palette)],
                 "symbol": symbol_palette[i % len(symbol_palette)],
                 "dash": "solid" if i == 0 else "dash",
                 "display_progress": lap_fraction,
@@ -1891,7 +1909,7 @@ def render_live_timing_view():
                     y=vals,
                     name=f"Stint {i+1}: {comp_name}",
                     line=dict(
-                        color={"SOFT": "#ff3333", "MEDIUM": "#ffff33", "HARD": "#f0f0f0"}.get(comp_name, "#00d4ff"),
+                        color=COMPOUND_COLORS.get(comp_name, "#00d4ff"),
                         width=4,
                     ),
                 )
@@ -1933,12 +1951,13 @@ def render_live_timing_view():
                 laps = np.arange(s_l, p_lap + 1)
                 vals = r["tiempos_race"][s_l - 1:p_lap]
                 comp_name = r["lista_compuestos"][j] if j < len(r["lista_compuestos"]) else "N/A"
+                c_color = COMPOUND_COLORS.get(comp_name, "#00d4ff")
                 fig1.add_trace(
                     go.Scatter(
                         x=laps,
                         y=vals,
-                        name=f"Estrategia {chr(65+i)} - Stint {j+1} ({comp_name})",
-                        line=dict(color=style, width=4, dash=dash),
+                        name=f"Estr. {chr(65+i)} - {comp_name}",
+                        line=dict(color=c_color, width=4, dash=dash),
                     )
                 )
                 s_l = p_lap + 1
@@ -1953,8 +1972,8 @@ def render_live_timing_view():
                     marker=dict(
                         symbol=symbol_palette[i],
                         size=16,
-                        color=style,
-                        line=dict(color="white", width=2),
+                        color=strategy_states[i]["color"],
+                        line=dict(color=strategy_states[i]["strategy_color"], width=3),
                     ),
                     name=f"Estrategia {chr(65+i)} actual",
                 )
@@ -2025,7 +2044,7 @@ def render_live_timing_view():
                         x=l,
                         y=v,
                         name=f"Stint {i+1} ({comp_name})",
-                        line=dict(color={"SOFT": "#ff3333", "MEDIUM": "#ffff33", "HARD": "#f0f0f0"}.get(comp_name, "#00d4ff"), width=3),
+                        line=dict(color=COMPOUND_COLORS.get(comp_name, "#00d4ff"), width=3),
                     )
                 )
                 s_l = p_lap + 1
@@ -2044,12 +2063,14 @@ def render_live_timing_view():
                 for j, p_lap in enumerate(r["vueltas_parada"] + [int(total_race_laps)]):
                     l = np.arange(s_l, p_lap + 1)
                     v = r["piecewise_temps"][s_l - 1:p_lap]
+                    comp_name = r["lista_compuestos"][j] if j < len(r["lista_compuestos"]) else "N/A"
+                    c_color = COMPOUND_COLORS.get(comp_name, "#00d4ff")
                     fig_termica.add_trace(
                         go.Scatter(
                             x=l,
                             y=v,
-                            name=f"Estrategia {chr(65+i)} - Stint {j+1}",
-                            line=dict(color=color, width=3, dash="solid" if i == 0 else "dash"),
+                            name=f"Estr. {chr(65+i)} - {comp_name}",
+                            line=dict(color=c_color, width=3, dash="solid" if i == 0 else "dash"),
                         )
                     )
                     s_l = p_lap + 1
@@ -2057,7 +2078,7 @@ def render_live_timing_view():
                 x_current = float(np.clip(strategy_states[i]["current_lap_float"], 1.0, float(total_race_laps)))
                 y_temp = np.interp(x_current, r["laps_range"], r["piecewise_temps"])
                 fig_termica.add_trace(
-                    go.Scatter(x=[x_current], y=[y_temp], mode="markers", marker=dict(symbol=symbol_palette[i], size=14, color=color, line=dict(color="white", width=2)), name=f"Act. {chr(65+i)}")
+                    go.Scatter(x=[x_current], y=[y_temp], mode="markers", marker=dict(symbol=symbol_palette[i], size=14, color=strategy_states[i]["color"], line=dict(color=strategy_states[i]["strategy_color"], width=3)), name=f"Act. {chr(65+i)}")
                 )
 
         fig_termica.update_layout(
@@ -2122,7 +2143,7 @@ def render_live_timing_view():
                         x=l,
                         y=v,
                         name=f"Stint {i+1} ({comp_name})",
-                        line=dict(color={"SOFT": "#ff3333", "MEDIUM": "#ffff33", "HARD": "#f0f0f0"}.get(comp_name, "#00d4ff"), width=3),
+                        line=dict(color=COMPOUND_COLORS.get(comp_name, "#00d4ff"), width=3),
                     )
                 )
                 s_l = p_lap + 1
@@ -2141,12 +2162,14 @@ def render_live_timing_view():
                 for j, p_lap in enumerate(r["vueltas_parada"] + [int(total_race_laps)]):
                     l = np.arange(s_l, p_lap + 1)
                     v = r["piecewise_life"][s_l - 1:p_lap]
+                    comp_name = r["lista_compuestos"][j] if j < len(r["lista_compuestos"]) else "N/A"
+                    c_color = COMPOUND_COLORS.get(comp_name, "#00d4ff")
                     fig_desgaste.add_trace(
                         go.Scatter(
                             x=l,
                             y=v,
-                            name=f"Estrategia {chr(65+i)} - Stint {j+1}",
-                            line=dict(color=color, width=3, dash="solid" if i == 0 else "dash"),
+                            name=f"Estr. {chr(65+i)} - {comp_name}",
+                            line=dict(color=c_color, width=3, dash="solid" if i == 0 else "dash"),
                         )
                     )
                     s_l = p_lap + 1
@@ -2154,7 +2177,7 @@ def render_live_timing_view():
                 x_current = float(np.clip(strategy_states[i]["current_lap_float"], 1.0, float(total_race_laps)))
                 y_life = np.interp(x_current, r["laps_range"], r["piecewise_life"])
                 fig_desgaste.add_trace(
-                    go.Scatter(x=[x_current], y=[y_life], mode="markers", marker=dict(symbol=symbol_palette[i], size=14, color=color, line=dict(color="white", width=2)), name=f"Act. {chr(65+i)}")
+                    go.Scatter(x=[x_current], y=[y_life], mode="markers", marker=dict(symbol=symbol_palette[i], size=14, color=strategy_states[i]["color"], line=dict(color=strategy_states[i]["strategy_color"], width=3)), name=f"Act. {chr(65+i)}")
                 )
 
             fig_desgaste.add_hrect(
