@@ -100,72 +100,197 @@ ACADEMIC_TEXTS_DIR = asset_path("academic_texts")
 
 DEFAULT_ACADEMIC_TEXTS = {
     "least_squares": """
-**Ajuste de Curvas / Mínimos Cuadrados**
+**Ajuste de curvas / Mínimos Cuadrados**
 
-En este módulo se ajusta una función a los datos de telemetría para representar la degradación del neumático. El método de mínimos cuadrados busca el polinomio que minimiza el error cuadrático entre los valores observados y los valores estimados.
+El método de mínimos cuadrados busca la función que mejor representa un conjunto de datos experimentales minimizando la suma de los errores al cuadrado entre los valores observados y los valores estimados.
 
-En el simulador, esto permite construir una curva de ritmo por vuelta que luego se usa para comparar estrategias de carrera.
+En forma general, si se tiene un modelo lineal en parámetros:
 
-Aplicación en el proyecto:
-- transformar datos discretos de telemetría en una función continua;
-- estimar la evolución del lap time;
-- alimentar el motor de estrategia con un modelo numérico interpretable.
+$$
+\hat{y} = X\\beta
+$$
+
+la solución que minimiza el error cuadrático medio es:
+
+$$
+\\beta = (X^T X)^{-1} X^T y
+$$
+
+En el caso del simulador, este método se utiliza para ajustar la curva de rendimiento del neumático a partir de telemetría real o sintética. La variable de interés es el tiempo por vuelta, que se modela en función de la vida útil del compuesto, la temperatura de pista y el tipo de goma. El objetivo no es solo interpolar datos, sino construir una función continua que luego pueda ser evaluada por el motor de estrategia.
+
+Aplicación dentro del simulador:
+- transformar datos discretos de telemetría en una curva continua de degradación;
+- estimar la tendencia del lap time a lo largo del stint;
+- obtener una representación numérica interpretable y apta para comparar estrategias.
+
+Si se usa un ajuste polinómico, el modelo adoptado puede expresarse como:
+
+$$
+p(n) = a_0 + a_1 n + a_2 n^2 + \\dots + a_k n^k
+$$
+
+donde $n$ representa la vida del neumático o la vuelta dentro del stint.
 """,
+
     "rk45": """
 **Runge-Kutta / EDO térmica**
 
-La temperatura del neumático se modela mediante una ecuación diferencial ordinaria. El método de Runge-Kutta aproxima la solución paso a paso, capturando la evolución térmica durante el stint.
+Las ecuaciones diferenciales ordinarias (EDO) describen cómo cambia una variable en función de otra. En este proyecto, la variable de estado es la temperatura del neumático, que evoluciona según el balance entre generación de calor por fricción y disipación térmica hacia el ambiente y la pista.
 
-En el simulador, esta temperatura afecta la degradación, el agarre y las penalizaciones por sobrecalentamiento.
+La forma general de la EDO térmica es:
 
-Aplicación en el proyecto:
-- resolver la dinámica térmica vuelta a vuelta;
-- estimar ventanas óptimas de trabajo térmico;
-- conectar física del compuesto con la estrategia.
+$$
+\\frac{dT}{dt} = H_{fricción} - H_{disipación}
+$$
+
+Para resolverla numéricamente se utiliza un esquema de Runge-Kutta de orden adaptativo, en particular una variante tipo Fehlberg 4(5), que estima dos soluciones por paso y usa su diferencia como error local.
+
+Estructura general del método:
+
+$$
+k_1 = h f(t_n, y_n)
+$$
+$$
+k_2 = h f(t_n + c_2 h, y_n + a_{21}k_1)
+$$
+$$
+k_3 = h f(t_n + c_3 h, y_n + a_{31}k_1 + a_{32}k_2)
+$$
+$$
+\\dots
+$$
+
+y la actualización del estado se aproxima mediante una combinación ponderada de esas pendientes parciales.
+
+En el simulador, este método permite calcular la evolución térmica vuelta a vuelta y capturar cuándo el neumático entra o sale de su ventana óptima de trabajo. Esa temperatura afecta directamente el agarre, el desgaste y la penalización por sobrecalentamiento.
+
+Aplicación dentro del simulador:
+- resolver la dinámica térmica del neumático durante cada stint;
+- estimar el impacto de la temperatura de pista sobre la degradación;
+- alimentar el cálculo del lap time con una variable física dinámica.
+
+La idea central es que la temperatura no se tome como un dato fijo, sino como una variable que evoluciona con el uso del neumático y modifica el comportamiento del modelo.
 """,
+
     "simpson": """
 **Integración numérica / Regla de Simpson**
 
-La integración numérica permite calcular el tiempo total acumulado a partir de una función de tiempo por vuelta. Simpson 1/3 aproxima el área bajo la curva con mayor precisión que una suma simple cuando la función presenta variaciones suaves.
+La integración numérica permite calcular el valor acumulado de una magnitud continua cuando no se dispone de una integral exacta simple o cuando la función proviene de datos discretos. En este proyecto, se usa para estimar el tiempo total de carrera o de un stint a partir de la función de tiempo por vuelta.
 
-En el simulador, se usa para estimar el costo temporal de un stint o una carrera completa.
+La Regla de Simpson 1/3 aproxima el área bajo la curva con una combinación de puntos pares e impares. Su forma clásica es:
 
-Aplicación en el proyecto:
-- obtener tiempo total continuo;
-- comparar estrategias con distinta cantidad de paradas;
-- cuantificar impacto de la degradación en el resultado final.
+$$
+\\int_a^b f(x)\\,dx \\approx \\frac{h}{3}\\left[f(x_0) + 4f(x_1) + 2f(x_2) + 4f(x_3) + \\dots + 4f(x_{n-1}) + f(x_n)\\right]
+$$
+
+donde:
+
+$$
+h = \\frac{b-a}{n}
+$$
+
+y $n$ debe ser par.
+
+En el simulador, la función integrada representa el lap time a lo largo de la carrera. Esto permite comparar estrategias de manera más precisa que con una simple suma discreta, especialmente cuando el ritmo cambia de forma suave por desgaste, temperatura o combustible.
+
+Aplicación dentro del simulador:
+- estimar el tiempo total acumulado de una carrera;
+- comparar estrategias de 1 parada y 2 paradas;
+- cuantificar el efecto de la degradación sobre el costo temporal final.
+
+La lectura conceptual es simple: el área bajo la curva de ritmo representa el tiempo total consumido por la estrategia.
 """,
+
     "newton": """
 **Newton-Raphson / Punto de cruce**
 
-Newton-Raphson se usa para encontrar raíces de una ecuación no lineal. En este contexto, ayuda a ubicar el crossover point: el instante en el que una estrategia deja de ser mejor que otra.
+Newton-Raphson es un método iterativo para encontrar raíces de una función no lineal. Se basa en la aproximación tangente: en cada iteración, se corrige una estimación inicial usando la pendiente de la función en ese punto.
 
-En el simulador, la raíz de la diferencia entre dos funciones de tiempo representa el momento de cambio de estrategia.
+La fórmula del método es:
 
-Aplicación en el proyecto:
-- determinar el punto óptimo de parada;
-- comparar tiempo de pista vs. tiempo de boxes;
-- resolver condiciones de empate entre dos estrategias.
+$$
+x_{n+1} = x_n - \\frac{f(x_n)}{f'(x_n)}
+$$
+
+Si la función modela la diferencia entre dos estrategias, entonces la raíz representa el punto en el que ambas tienen el mismo costo. En términos del simulador, ese instante se interpreta como el crossover point: la vuelta en la que conviene dejar de seguir con un neumático desgastado y entrar a boxes.
+
+Formalmente, el problema se puede escribir como:
+
+$$
+f(n) = T_{estrategia\\ A}(n) - T_{estrategia\\ B}(n) = 0
+$$
+
+En el simulador, Newton-Raphson se usa para localizar esa transición entre estrategias con buena rapidez y sin necesidad de recorrer exhaustivamente todas las posibilidades.
+
+Aplicación dentro del simulador:
+- encontrar el instante óptimo de parada;
+- resolver el punto de igualdad entre una estrategia con más desgaste y otra con neumático fresco;
+- determinar la ventana crítica en la que el pit stop empieza a ser rentable.
+
+Su valor en este proyecto es que convierte una decisión táctica en una raíz matemática bien definida.
 """,
+
     "ml": """
 **Modelo de Machine Learning**
 
-El aprendizaje automático complementa el modelado matemático al capturar relaciones no lineales difíciles de representar con una sola ecuación. Aquí, el modelo se alimenta con variables como vida del neumático, temperatura y compuesto.
+El aprendizaje automático se incorpora como una capa complementaria al modelado físico. Su objetivo es capturar relaciones no lineales entre variables que, en la práctica, no siempre se representan bien con una única ecuación cerrada.
 
-En el simulador, ML actúa como predictor del tiempo de vuelta y se integra con los métodos numéricos para construir una solución híbrida.
+En este proyecto, el modelo se usa para predecir el tiempo de vuelta a partir de variables como vida del neumático, temperatura y compuesto. La implementación actual utiliza una tubería de regresión con expansión polinómica, escalado y regresión regularizada, lo que permite ajustar curvas más flexibles sin perder estabilidad numérica.
 
-Aplicación en el proyecto:
-- mejorar la estimación del ritmo real;
-- combinar física e inferencia estadística;
-- reforzar la validación con datos de telemetría.
+Una formulación típica del modelo regularizado es:
+
+$$
+\\min_{\\beta} \\left( ||y - X\\beta||^2 + \\lambda ||\\beta||^2 \\right)
+$$
+
+donde el segundo término penaliza coeficientes demasiado grandes y mejora la generalización.
+
+En el simulador, el ML no reemplaza a los métodos numéricos: los complementa. La parte física simula temperatura y degradación; la parte estadística ayuda a refinar la predicción del lap time y a absorber patrones complejos presentes en los datos de telemetría.
+
+Aplicación dentro del simulador:
+- estimar el ritmo del neumático con mayor flexibilidad;
+- integrar variables térmicas y mecánicas en una sola predicción;
+- mejorar la sensibilidad del modelo frente a distintos compuestos y condiciones de pista.
+
+La estrategia híbrida permite combinar interpretabilidad física con capacidad de ajuste basada en datos.
 """,
+
     "global": """
 Lectura general del simulador:
 
-Este laboratorio une modelado matemático, simulación y predicción de datos para resolver un problema realista de ingeniería: elegir la mejor estrategia de carrera bajo restricciones físicas, térmicas y operativas.
+Este simulador integra modelado matemático, simulación numérica y aprendizaje automático para resolver un problema de ingeniería aplicado a la Fórmula 1: determinar la estrategia de carrera óptima minimizando el tiempo total.
 
-Los métodos numéricos no aparecen como contenido aislado, sino como herramientas que resuelven partes concretas del sistema: ajuste, integración, resolución de EDO, búsqueda de raíces y validación comparativa.
-""",
+Más que una colección de métodos aislados, el sistema funciona como una cadena de procesamiento donde cada técnica resuelve una parte concreta del problema. Primero se incorporan datos de telemetría real o perfiles sintéticos del circuito. Luego, esos datos se convierten en funciones útiles para la simulación: el ajuste de curvas modela la degradación del neumático, Runge-Kutta aproxima la evolución térmica, Simpson calcula el tiempo total acumulado y Newton-Raphson localiza el punto de cruce entre estrategias. Finalmente, la capa de Machine Learning refina la predicción del lap time a partir de variables físicas y de estado.
+
+La lógica general del flujo es la siguiente:
+
+1. ingreso de datos y parámetros de pista;
+2. ajuste de curvas para representar el comportamiento del neumático;
+3. simulación térmica mediante una EDO resuelta numéricamente;
+4. cálculo del tiempo total mediante integración;
+5. búsqueda del crossover point entre estrategias;
+6. comparación final y visualización interactiva de resultados.
+
+En forma resumida, el simulador transforma variables discretas y fenómenos físicos complejos en una decisión operativa concreta: cuándo parar, con qué compuesto salir y cuántas paradas conviene hacer.
+
+Cada método numérico cumple un rol específico dentro de esa arquitectura:
+
+- mínimos cuadrados: construir la curva de degradación y ritmo;
+- Runge-Kutta: simular la evolución térmica del neumático;
+- Simpson: acumular el tiempo total de carrera o de stint;
+- Newton-Raphson: ubicar el punto de cruce entre estrategias;
+- Machine Learning: mejorar la estimación del rendimiento lap a lap.
+
+La fortaleza del sistema está en que cada bloque alimenta al siguiente, permitiendo pasar desde datos reales o simulados hasta una recomendación de estrategia interpretable, visual y consistente con los conceptos de modelado y simulación.
+
+En términos de ingeniería, la propuesta combina:
+- modelado de sistemas,
+- resolución numérica,
+- análisis de sensibilidad,
+- y validación mediante datos.
+
+Por eso el simulador no solo predice tiempos, sino que construye una representación computacional coherente del problema estratégico de carrera.
+"""
 }
 
 
@@ -1470,10 +1595,11 @@ if st.session_state.show_academic_panel:
     with tab4:
         st.markdown("### Cómo se valida el simulador")
         st.write(
-            "Se comparan estrategias simuladas con escenarios de referencia y se observa la desviación entre tiempos predichos y tiempos esperados. El objetivo no es solo acertar una vuelta de parada, sino medir consistencia, sensibilidad térmica y estabilidad numérica."
+            "La validación no consiste solamente en verificar que el código ejecute, sino en comprobar que el modelo conserva coherencia física y numérica frente a cambios en temperatura, compuesto y longitud de carrera. "
+            "La comparación con escenarios de referencia permite evaluar estabilidad, sensibilidad y capacidad predictiva."
         )
         st.markdown(
-            "**Indicadores sugeridos:** RMSE de lap times, error en crossover lap, sensibilidad a temperatura de pista, y estabilidad frente a cambios de compuesto."
+            "**Indicadores sugeridos:** RMSE de lap times, error en la vuelta de crossover, sensibilidad térmica, robustez frente a cambios de compuesto y consistencia entre estrategias comparadas."
         )
 
     st.divider()
@@ -2072,27 +2198,27 @@ def render_live_timing_view():
     c1, c2 = st.columns(2)
     with c1:
         academic_method_card(
-            "Ajuste de curvas",
-            "Convierte telemetría ruidosa en una representación continua del comportamiento del neumático.",
+            "Ajuste de curvas / Mínimos cuadrados",
+            "Ajusta una función continua a la telemetría para modelar la degradación del neumático y el ritmo por vuelta.",
             "least_squares",
             icon="",
         )
         academic_method_card(
-            "Runge-Kutta",
-            "Resuelve la ecuación térmica de forma numérica y estable.",
+            "Runge-Kutta / EDO térmica",
+            "Resuelve la evolución térmica del compuesto a partir de un balance entre generación y disipación de calor.",
             "rk45",
             icon="",
         )
     with c2:
         academic_method_card(
-            "Simpson",
-            "Integra el ritmo para obtener tiempo total de carrera o de stint.",
+            "Integración numérica / Simpson",
+            "Calcula el tiempo total acumulado como área bajo la curva de lap time.",
             "simpson",
             icon="",
         )
         academic_method_card(
-            "Newton-Raphson",
-            "Localiza el punto de cruce entre dos estrategias.",
+            "Newton-Raphson / Crossover point",
+            "Encuentra el punto en que una estrategia deja de ser mejor que otra por efecto del desgaste y del pit loss.",
             "newton",
             icon="",
         )
