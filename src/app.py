@@ -708,6 +708,7 @@ TRACK_SHAPES_RAW = {
     "Baku": [(-0.95, 0.00), (-0.20, 0.02), (0.10, 0.25), (0.18, 0.55), (0.36, 0.70), (0.58, 0.58), (0.68, 0.20), (0.80, -0.10), (0.92, -0.15), (0.50, -0.28), (0.05, -0.25), (-0.45, -0.18), (-0.85, -0.12)],
     "Singapur": [(-0.92, 0.15), (-0.68, 0.30), (-0.40, 0.18), (-0.15, 0.42), (0.15, 0.28), (0.42, 0.48), (0.70, 0.25), (0.82, -0.08), (0.50, -0.25), (0.18, -0.38), (-0.10, -0.52), (-0.50, -0.45), (-0.80, -0.18)],
     "Las Vegas": [(-0.92, 0.00), (-0.58, 0.12), (-0.18, 0.10), (0.20, 0.12), (0.60, 0.10), (0.92, 0.00), (0.58, -0.18), (0.18, -0.20), (-0.20, -0.18), (-0.62, -0.12)],
+    "Miami": [(-0.95, -0.20), (-0.80, 0.10), (-0.60, 0.40), (-0.30, 0.50), (0.10, 0.45), (0.40, 0.60), (0.75, 0.55), (0.90, 0.20), (0.85, -0.15), (0.50, -0.30), (0.10, -0.25), (-0.20, -0.55), (-0.60, -0.60), (-0.85, -0.45)],
 }
 
 
@@ -1015,8 +1016,8 @@ def obtener_track_geometry(track_name, year=2023, session_type="R"):
         "track_name": track_name,
     }
 
-def get_path_arrays(track_name):
-    geom = obtener_track_geometry(track_name)
+def get_path_arrays(track_name, year=2023):
+    geom = obtener_track_geometry(track_name, year=year)
     x = np.asarray(geom["x"], dtype=float)
     y = np.asarray(geom["y"], dtype=float)
     return geom, x, y
@@ -1292,6 +1293,7 @@ if logo_uri:
 st.sidebar.header("Race Strategy")
 
 track_name = st.sidebar.selectbox("Circuito", list(CIRCUITOS_CONFIG.keys()))
+year = st.sidebar.number_input("Año", 2021, 2026, 2023)
 track_settings = CIRCUITOS_CONFIG.get(track_name, {})
 track_temp = st.sidebar.slider("Temperatura de Pista (°C)", 15, 60, 35)
 total_race_laps = st.sidebar.number_input(
@@ -1467,13 +1469,13 @@ if not st.session_state.playing:
 
 # Backend pipeline caching
 @st.cache_data(show_spinner=False)
-def cargar_datos_entrenamiento(track_name):
-    return obtener_datos_aumentados(track_name=track_name)
+def cargar_datos_entrenamiento(track_name, year=2023):
+    return obtener_datos_aumentados(track_name=track_name, year=year)
 
 
 @st.cache_resource(show_spinner=False)
-def entrenar_modelo_ia(track_name):
-    df = cargar_datos_entrenamiento(track_name)
+def entrenar_modelo_ia(track_name, year=2023):
+    df = cargar_datos_entrenamiento(track_name, year=year)
     predictor = PredictorDegradacion()
     base_time = CIRCUITOS_CONFIG.get(track_name, {}).get("base_lap_time", 90.0)
     predictor.entrenar(df, track_base_time=base_time)
@@ -1481,8 +1483,8 @@ def entrenar_modelo_ia(track_name):
 
 
 @st.cache_data(show_spinner=False)
-def get_sim_data(track_name, track_temp, total_race_laps, pit_loss, lista_compuestos):
-    predictor = entrenar_modelo_ia(track_name)
+def get_sim_data(track_name, track_temp, total_race_laps, pit_loss, lista_compuestos, year=2023):
+    predictor = entrenar_modelo_ia(track_name, year=year)
     engine = EngineEstrategia(predictor, track_name=track_name)
     engine.pit_loss = pit_loss
 
@@ -1529,13 +1531,14 @@ for s in strategy_inputs:
         int(total_race_laps),
         float(pit_loss),
         tuple(s["lista_compuestos"]),
+        year=year,
     )
     strategy_results.append({**s, **sim_data})
     
     
 crossover_info = None
 if len(strategy_results) > 1:
-    comparison_engine = EngineEstrategia(entrenar_modelo_ia(track_name), track_name=track_name)
+    comparison_engine = EngineEstrategia(entrenar_modelo_ia(track_name, year=year), track_name=track_name)
     comparison_engine.pit_loss = float(pit_loss)
     crossover_info = comparison_engine.encontrar_crossover_estrategias(
         strategy_results[0]["cumulative_times"],
@@ -1543,7 +1546,7 @@ if len(strategy_results) > 1:
         int(total_race_laps),
     )
 
-track_geom = get_path_arrays(track_name)[0]
+track_geom = get_path_arrays(track_name, year=year)[0]
 track_x = np.asarray(track_geom["x"], dtype=float)
 track_y = np.asarray(track_geom["y"], dtype=float)
 
